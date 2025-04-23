@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from pdfquery import PDFQuery
 
-from scrap_pdf_pdfquery import get_datos_from_pdf, get_porteador
+from scrap_pdf import get_datos_from_pdf
 from utils import listar_archivos_pdf
 
 
@@ -15,7 +15,7 @@ def process_pdf(archivo:str)->dict:
         archivo (str): ruta del archivo PDF a procesar
 
     Returns:
-        data: _description_
+        data: diccionario con los datos obtenidos del PDF
     """
     try:
         pdf = PDFQuery(archivo)
@@ -47,10 +47,14 @@ def process_all_pdfs(archivos: list[str])->list:
     print(f"Procesados {len(archivos)} archivos en {time.time() - start:.2f} segundos")
     return data
 
-def main_process(archivos: list,destino: str):
+def main_process(archivos: list,destino: str)->None:
     """
-    
+    Procesa todos los archivos PDF, los convierte a df de pandas y los guarda en un archivo Excel
+    Args:
+        archivos (list): lista de paths de archivos a procesar
+        destino (str): path absoluto
     """
+   
     lista = process_all_pdfs(archivos)
     df = pd.DataFrame(lista)
     df.to_excel(destino, index=False)

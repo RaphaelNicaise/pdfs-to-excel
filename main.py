@@ -5,8 +5,6 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
-
-
 from utils import check_single_instance
 from processing import main_process
 
