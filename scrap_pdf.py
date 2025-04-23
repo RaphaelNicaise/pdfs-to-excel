@@ -8,7 +8,6 @@ def get_datos_from_pdf(pdf: PDFQuery) -> dict:
     """
      
     datos = {
-        "archivo": get_archivo_nombre(pdf),
         "fecha_emision": obtener_fecha_emision(pdf),
         "porteador": get_porteador(pdf),
         "ciudad_pais_partida": get_ciudad_pais_partida(pdf),

@@ -5,3 +5,4 @@ testing-data/
 *.spec
 __pycache__/
 *.xml
+*.xlsx
