@@ -1,0 +1,7 @@
+venv
+build/
+dist/
+testing-data/
+*.spec
+__pycache__/
+*.xml
