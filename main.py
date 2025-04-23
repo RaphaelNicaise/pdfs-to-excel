@@ -2,18 +2,19 @@ import os
 import sys
 
 import customtkinter as ctk
-from tkinter import filedialog
+import tkinter as tk
+from tkinter import filedialog, messagebox
+
+
 
 from utils import check_single_instance
-
-# ------------------- CONFIGURACIÓN DE LA APP -------------------
+from processing import main_process
 
 def configurar_apariencia():
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("blue")
 
 def crear_ventana_principal():
-    
     check_single_instance("ManifiestoCargaPDF")
     
     app = ctk.CTk()
@@ -21,7 +22,7 @@ def crear_ventana_principal():
     app.title("Manifiesto Internacional de Carga | PDF ➜ Excel")
     
     try:
-        base_path = sys._MEIPASS  # PyInstaller
+        base_path = sys._MEIPASS
     except AttributeError:
         base_path = os.path.dirname(__file__)
         
@@ -30,7 +31,6 @@ def crear_ventana_principal():
     
     return app
 
-# ------------------- TOOLTIP -------------------
 
 def mostrar_tooltip(widget, texto):
     tooltip = ctk.CTkToplevel()
@@ -50,36 +50,96 @@ def mostrar_tooltip(widget, texto):
     widget.bind("<Enter>", mostrar, add="+")
     widget.bind("<Leave>", ocultar, add="+")
 
-# ------------------- FUNCIONES PRINCIPALES -------------------
 
 def seleccionar_carpeta():
     return filedialog.askdirectory()
 
-def mostrar_archivos_pdf(frame, carpeta):
+def seleccionar_archivos():
+    archivos = filedialog.askopenfilenames(
+        filetypes=[("Archivos PDF", "*.pdf")],
+        title="Seleccionar archivo(s) PDF"
+    )
+    return list(archivos)
+
+def mostrar_archivos_pdf(frame, archivos_absolutos):
     limpiar_frame(frame)
-    archivos_pdf = [f for f in os.listdir(carpeta) if f.lower().endswith('.pdf')]
-    for archivo in archivos_pdf:
-        etiqueta = ctk.CTkLabel(frame, text=f'📄 {archivo}', anchor="w")
+    for archivo in archivos_absolutos:
+        nombre = os.path.basename(archivo)
+        etiqueta = ctk.CTkLabel(frame, text=f'📄 {nombre}', anchor="w")
         etiqueta.pack(anchor="w", padx=10, pady=2)
-    return archivos_pdf
 
 def limpiar_frame(frame):
     for widget in frame.winfo_children():
         widget.destroy()
+    frame.update_idletasks()
+    try:
+        frame._parent_canvas.yview_moveto(0.0)  # ⬆️ fuerza scroll arriba del todo
+    except Exception:
+        pass
 
 def convertir_a_excel():
-    """
-    Logica
-    """
-    ...
+    import os
+import sys
+import customtkinter as ctk
+from tkinter import filedialog, simpledialog
+from utils import check_single_instance
+from processing import main_process
+
+def convertir_a_excel():
+    from tkinter import simpledialog
+
+def convertir_a_excel():
+    boton = convertir_a_excel.boton
+    archivos = getattr(boton, 'archivos_pdf', [])
+    
+    if not archivos:
+        tk.messagebox.showwarning("Advertencia", "No hay archivos para procesar.")
+        return
+
+    # A REVISAR PORQUE ENREALIDAD VAN A SER VARIOS ARCHIVOS
+    nombre_archivo = simpledialog.askstring("Nombre del archivo", "Ingrese el nombre para el archivo Excel (sin extensión):")
+    if not nombre_archivo:
+        return
+
+    
+    carpeta_destino = filedialog.askdirectory(title="Seleccionar carpeta destino para Excel")
+    if not carpeta_destino:
+        return
+
+                                                ## OJOTA
+    excel_path = os.path.join(carpeta_destino, f"{nombre_archivo}.xlsx")
+
+    # Feedback visual
+    boton.configure(state="disabled", text="⏳ Convirtiendo...", fg_color="#888888")
+    boton.update_idletasks()
+
+    try:
+        main_process(archivos, excel_path)
+        tk.messagebox.showinfo("Éxito", f"Archivos convertidos a Excel en: {excel_path}")
+    except Exception as e:
+        tk.messagebox.showerror("Error", f"Ocurrió un error: {e}")
+    finally:
+        boton.configure(state="normal", text="📤 Convertir a Excel", fg_color="#00aa88")
+
     
 
-# ------------------- FUNCIONES DE INTERFAZ -------------------
 
 def accion_seleccionar_carpeta(app, frame, etiqueta, boton_convertir, contador_pdfs):
     carpeta = seleccionar_carpeta()
     if carpeta:
-        frame.pack(pady=10, padx=10, fill="both", expand=True)
+        archivos_absolutos = [os.path.join(carpeta, f) for f in os.listdir(carpeta) if f.lower().endswith('.pdf')]
+        if not archivos_absolutos:
+            mostrar_tooltip(boton_convertir, "No se han cargado PDFs todavía")
+            return
+
+        mostrar_archivos_pdf(frame, archivos_absolutos)
+
+        total_peso = sum(os.path.getsize(f) for f in archivos_absolutos)
+        contador_pdfs.configure(
+            text=f"{len(archivos_absolutos)} archivo(s) PDF • {round(total_peso / (1024 * 1024), 2)} MB",
+            text_color="gray80"
+        )
+
         etiqueta.configure(
             text=f"📁 {carpeta}",
             anchor="w",
@@ -88,27 +148,41 @@ def accion_seleccionar_carpeta(app, frame, etiqueta, boton_convertir, contador_p
             corner_radius=8,
             text_color="white"
         )
-        etiqueta.pack_configure(padx=0)  # para evitar centrado
         etiqueta.bind("<Button-1>", lambda e: os.startfile(carpeta))
         etiqueta.bind("<Enter>", lambda e: etiqueta.configure(fg_color="#3f4f68"))
         etiqueta.bind("<Leave>", lambda e: etiqueta.configure(fg_color="#2e3b4e"))
 
-        archivos_pdf = mostrar_archivos_pdf(frame, carpeta)
-        total_peso = sum(os.path.getsize(os.path.join(carpeta, f)) for f in archivos_pdf)
+        boton_convertir.configure(state="normal", fg_color="#00aa88", hover_color="#00ccaa")
+        boton_convertir.archivos_pdf = archivos_absolutos
+
+def accion_seleccionar_archivos(app, frame, etiqueta, boton_convertir, contador_pdfs):
+    archivos_absolutos = seleccionar_archivos()
+    if archivos_absolutos:
+        mostrar_archivos_pdf(frame, archivos_absolutos)
+
+        total_peso = sum(os.path.getsize(f) for f in archivos_absolutos)
+        carpeta = os.path.dirname(archivos_absolutos[0])
+
         contador_pdfs.configure(
-            text=f"{len(archivos_pdf)} archivo(s) PDF • {round(total_peso / (1024 * 1024), 2)} MB",
+            text=f"{len(archivos_absolutos)} archivo(s) PDF • {round(total_peso / (1024 * 1024), 2)} MB",
             text_color="gray80"
         )
 
-        if archivos_pdf:
-            boton_convertir.configure(state="normal", fg_color="#00aa88", hover_color="#00ccaa")
-            boton_convertir.unbind("<Enter>")
-            boton_convertir.unbind("<Leave>")
-        else:
-            boton_convertir.configure(state="disabled", fg_color="#434a3a", hover_color="#434a3a")
-            mostrar_tooltip(boton_convertir, "No se han cargado PDFs todavía")
-    else:
-        limpiar_estado(frame, etiqueta, boton_convertir, contador_pdfs)
+        etiqueta.configure(
+            text=f"📁 {carpeta}",
+            anchor="w",
+            cursor="hand2",
+            fg_color="#2e3b4e",
+            corner_radius=8,
+            text_color="white"
+        )
+        etiqueta.bind("<Button-1>", lambda e: os.startfile(carpeta))
+        etiqueta.bind("<Enter>", lambda e: etiqueta.configure(fg_color="#3f4f68"))
+        etiqueta.bind("<Leave>", lambda e: etiqueta.configure(fg_color="#2e3b4e"))
+
+        boton_convertir.configure(state="normal", fg_color="#00aa88", hover_color="#00ccaa")
+        boton_convertir.archivos_pdf = archivos_absolutos
+
 
 def limpiar_estado(frame, etiqueta, boton_convertir, contador_pdfs):
     etiqueta.configure(
@@ -128,9 +202,8 @@ def limpiar_estado(frame, etiqueta, boton_convertir, contador_pdfs):
     boton_convertir.configure(state="disabled", fg_color="#434a3a", hover_color="#434a3a")
     boton_convertir.unbind("<Enter>")
     boton_convertir.unbind("<Leave>")
-    print("Path limpiado")
+    boton_convertir.archivos_pdf = []
 
-# ------------------- EJECUCIÓN -------------------
 
 def main():
     configurar_apariencia()
@@ -142,7 +215,6 @@ def main():
     contenedor_principal = ctk.CTkFrame(app)
     contenedor_principal.pack(fill="both", expand=True, padx=20, pady=10)
 
-    # -------- COLUMNA IZQUIERDA --------
     columna_izquierda = ctk.CTkFrame(contenedor_principal)
     columna_izquierda.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=10)
 
@@ -155,7 +227,6 @@ def main():
     frame_scroll = ctk.CTkScrollableFrame(columna_izquierda, label_text="Archivos PDF encontrados")
     frame_scroll.pack(fill="both", expand=True)
 
-    # -------- COLUMNA DERECHA --------
     columna_derecha = ctk.CTkFrame(contenedor_principal)
     columna_derecha.pack(side="right", fill="y", padx=(10, 0), pady=10)
 
@@ -167,8 +238,19 @@ def main():
         height=40,
         font=ctk.CTkFont(size=14, weight="bold")
     )
-    boton_seleccionar.pack(pady=(0, 20))
+    boton_seleccionar.pack(pady=(0, 10))
 
+    boton_seleccionar_archivos = ctk.CTkButton(
+        columna_derecha,
+        text="📑 Seleccionar archivo(s) PDF",
+        command=lambda: accion_seleccionar_archivos(app, frame_scroll, etiqueta_path, boton_convertir, contador_pdfs),
+        width=240,
+        height=40,
+        font=ctk.CTkFont(size=14, weight="bold")
+    )
+    boton_seleccionar_archivos.pack(pady=(0, 20))
+
+    global boton_convertir
     boton_convertir = ctk.CTkButton(
         columna_derecha,
         text="📤 Convertir a Excel",
@@ -180,6 +262,8 @@ def main():
         command=convertir_a_excel,
         state="disabled"
     )
+    convertir_a_excel.boton = boton_convertir
+    boton_convertir.archivos_pdf = []
     boton_convertir.pack(pady=(0, 10))
     mostrar_tooltip(boton_convertir, "No se han cargado PDFs todavía")
 
