@@ -1,6 +1,6 @@
 venv
 build/
-dist/
+dist/*.lnk
 *.spec
 __pycache__/
 *.xml
