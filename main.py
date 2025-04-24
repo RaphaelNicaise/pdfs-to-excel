@@ -3,7 +3,7 @@ import sys
 
 import customtkinter as ctk
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, simpledialog
 
 from utils import check_single_instance
 from processing import main_process
@@ -74,17 +74,6 @@ def limpiar_frame(frame):
         frame._parent_canvas.yview_moveto(0.0)  # ⬆️ fuerza scroll arriba del todo
     except Exception:
         pass
-
-def convertir_a_excel():
-    import os
-import sys
-import customtkinter as ctk
-from tkinter import filedialog, simpledialog
-from utils import check_single_instance
-from processing import main_process
-
-def convertir_a_excel():
-    from tkinter import simpledialog
 
 def convertir_a_excel():
     boton = convertir_a_excel.boton
