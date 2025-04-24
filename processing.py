@@ -51,7 +51,7 @@ def process_pdf(archivo:str)->dict:
             return None
             
         data = get_datos_from_pdf(pdf)
-        print(f"Procesado {archivo} en {time.time() - start:.2f} segundos")
+        print(f"Procesado {os.path.basename(archivo)} en {time.time() - start:.2f} segundos")
         return data
     except Exception as e:
         print(f"Error procesando {archivo}: {e}")
