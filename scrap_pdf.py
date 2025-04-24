@@ -1,7 +1,7 @@
 from pdfquery import PDFQuery
 import os 
 
-
+# fecha_emision
 def check_format(pdf: PDFQuery):
     """
     Verifica si el formato del PDF es correcto.
@@ -53,8 +53,6 @@ def get_archivo_nombre(pdf: PDFQuery) -> str:
         print(f"Error: {e}")
         return ""
 
-
-# fecha_emision
 def obtener_fecha_emision(pdf: PDFQuery) -> str:
     """Obtiene la fecha de emision del archivo PDF usando pdfquery.
     """
