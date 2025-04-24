@@ -1,8 +1,8 @@
 venv
 build/
 dist/
-testing-data/
 *.spec
 __pycache__/
 *.xml
 *.xlsx
+testing-data/03-MARZO-2025
