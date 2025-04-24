@@ -8,18 +8,8 @@ from tkinter import filedialog, simpledialog
 
 from utils import check_single_instance
 from processing import main_process
+from console_redirect import ConsoleRedirect
 
-class ConsoleRedirect:
-    def __init__(self, textbox):
-        self.textbox = textbox
-
-    def write(self, mensaje):
-        self.textbox.insert("end", mensaje)
-        self.textbox.see("end")
-        self.textbox.update_idletasks()
-
-    def flush(self):
-        pass
 
 def configurar_apariencia():
     ctk.set_appearance_mode("dark")
