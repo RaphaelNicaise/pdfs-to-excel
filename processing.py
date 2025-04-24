@@ -6,6 +6,7 @@ from pdfquery import PDFQuery
 
 from scrap_pdf import get_datos_from_pdf, check_format
 from utils import listar_archivos_pdf
+from openpyxl import load_workbook
 
 def trasnform_df(df)->pd.DataFrame:
     """ Transformar el df para que tenga el formato correcto
@@ -21,7 +22,7 @@ def trasnform_df(df)->pd.DataFrame:
     df['documentos_anexos'] = df['documentos_anexos'].str.extract(r'Destinacion:\s*(.*?)\s*F\. Ofic')
     
     df['conductor'] = df['conductor'].str.extract(r'CONDUCTOR\s*\d*:\s*(.*)')
-    
+    df['descripcion_mercancia'] = df['descripcion_mercancia'].str.replace(r'cid:\d+', '', regex=True)
     
     df = df.astype({
         'valor_FOT': 'float',
@@ -98,7 +99,25 @@ def main_process(archivos: list, destino: str) -> None:
     
     # Guardar el df en el archivo Excel
     df.to_excel(destino, index=False)
+    # Ajustar el ancho de las columnas automáticamente
+    workbook = load_workbook(destino)
+    sheet = workbook.active
 
+    for column in sheet.columns:
+        max_length = 0
+        column_letter = column[0].column_letter  # Obtener la letra de la columna
+        for cell in column:
+            try:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            except:
+                pass
+        adjusted_width = max_length + 2
+        sheet.column_dimensions[column_letter].width = adjusted_width
+
+    workbook.save(destino)
+    workbook.close()
+    print(f"Acomodando las columnas de excel...")
 
 # dejar un archivo general
 
