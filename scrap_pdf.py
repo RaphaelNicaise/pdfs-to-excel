@@ -1,5 +1,6 @@
 from pdfquery import PDFQuery
 import os 
+import re
 
 # fecha_emision
 def check_format(pdf: PDFQuery):
@@ -28,7 +29,7 @@ def get_datos_from_pdf(pdf: PDFQuery) -> dict:
         "DESTINATARIO": get_DESTINATARIO(pdf), # FALTA CORTAAAAAAAAAAAAAAAR
         "TRANSPORTE CAMPO 1": get_TRANSPORTE_CAMPO_1(pdf), # listo
         #NACIONALIDAD TRANSPORTE
-        "TRANSPORTE CAMPO 9": get_TRANSPORTE_CAMPO_9(pdf), # FALTA CORTAR (r/z de campo 9)
+        "TRANSPORTE CAMPO 9": get_TRANSPORTE_CAMPO_9(pdf), # CORTA DEL NOMBRE HASTA LA ULTIMA LETRA
         "TRACTOR": get_TRACTOR(pdf), # listo
         "SEMI": get_SEMI(pdf), # listo 
         "DESTINO": get_DESTINO(pdf), # listo
@@ -112,17 +113,18 @@ def get_DESTINO(pdf: PDFQuery) -> str:
 
 # camion_original
 
-def get_TRANSPORTE_CAMPO_9(pdf: PDFQuery) -> str:
-    """Obtiene el camion original del archivo PDF usando pdfquery.
-    """
-    try:
-        x0, y0, x1, y1 = 31.52, 634.96, 306.04, 693.48
-        text_elements = pdf.pq(f'LTTextLineHorizontal:in_bbox("{x0},{y0},{x1},{y1}")')
-        return text_elements.text().split("proprietario", 1)[-1].strip()
 
-    except KeyError as e:
-        print(f"Error: {e}")
-        return ""
+def get_TRANSPORTE_CAMPO_9(pdf: PDFQuery):
+    # siguiente de esto CAMINH?O ORIGINAL : Nome e endereco do proprietario texto
+    # siguiente de texto, primera letra
+    x0, x1, y0, y1 = 31.52, 634.96, 306.04, 693.48
+
+    texto = pdf.pq('LTRect:in_bbox("%s, %s, %s, %s")' % (x0, y0, x1, y1)).text()
+
+    # Use regex to extract the text between the specified phrases
+    match = re.search(r'CAMINH\?O ORIGINAL : Nome e endereco do proprietario(.*?)CAMION SUBSTITUTO', texto, re.DOTALL)
+    result = match.group(1).strip() if match else None
+    return result
     
 
     

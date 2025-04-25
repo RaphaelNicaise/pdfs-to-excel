@@ -5,7 +5,7 @@ import pandas as pd
 from pdfquery import PDFQuery
 
 from scrap_pdf import get_datos_from_pdf, check_format
-from utils import listar_archivos_pdf, pdf_a_xml
+from utils import listar_archivos_pdf
 from openpyxl import load_workbook
 
 def trasnform_df(df)->pd.DataFrame:
@@ -32,6 +32,7 @@ def trasnform_df(df)->pd.DataFrame:
     df['FECHA CARGA'] = pd.to_datetime(df['FECHA CARGA'], format='%d-%m-%y').dt.strftime('%d/%m/%Y')
 
     df['D.D.T'] = df['D.D.T'].str.extract(r'Destinacion:\s*(.*?)\s*F\. Ofic')
+    
     
     df['descripcion_mercancia'] = df['descripcion_mercancia'].str.replace(r'cid:\d+', '', regex=True)
 

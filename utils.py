@@ -5,6 +5,8 @@ import os
 
 from functools import partial
 
+from pdfquery import PDFQuery
+
 def check_single_instance(app_name):
     """
     Para que no se pueda abrir más de una instancia de la aplicación.
@@ -37,13 +39,30 @@ listar_archivos_pdf = partial(listar_archivos, formato='.pdf')
 __all__ = ['listar_archivos_pdf'] 
 # la agrega al namespace del modulo, ya que es una funcion parcial, y no se puede importar directamente
 
-def pdf_a_xml(pdf: str) -> None:
-    """Crea un archivo XML a partir de un PDF 
-    (esta funcion es para debuggear y ver el arbol de etiquetas del PDF)
-    Args:
-        pdf (str): path
+def convertir_pdf_a_xml(pdf_path, output_path=None):
     """
-    pdf.tree.write('output.xml', encoding='utf-8', xml_declaration=True, pretty_print=True)
+    Convierte un archivo PDF a XML utilizando pdfquery.
+
+    Args:
+        pdf_path (str): Ruta del archivo PDF.
+        output_path (str, optional): Ruta donde se guardará el archivo XML. 
+                                     Si no se proporciona, se guardará junto al PDF con extensión .xml.
+
+    Returns:
+        str: Ruta del archivo XML generado.
+    """
+
+    # Cargar el archivo PDF
+    pdf = PDFQuery(pdf_path)
+    pdf.load(0)  # Cargar la primera página del PDF
+
+    # Generar la ruta de salida si no se proporciona
+    if output_path is None:
+        output_path = pdf_path.replace('.pdf', '.xml')
+
+    # Guardar el contenido como XML
+    pdf.tree.write(output_path, pretty_print=True, encoding="utf-8")
+    return output_path
     
 if __name__ == "__main__":
     print(listar_archivos_pdf('C:/Users/Usuario/Desktop/Rapha/pdfs-to-excel/testing-data'))
