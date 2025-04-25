@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from pdfquery import PDFQuery
 
-from scrap_pdf import get_datos_from_pdf, check_format
+from scrap_pdf_AG import get_datos_from_pdf, check_format, get_TRANSPORTE_CAMPO_9
 from utils import listar_archivos_pdf
 from openpyxl import load_workbook
 
@@ -60,14 +60,14 @@ def process_pdf(archivo:str)->dict:
         pdf.load(0)
         
         if not check_format(pdf):
-            print(f"Formato incorrecto para {archivo}")
+            print(f"Formato incorrecto en {archivo}.")
             return None
             
         data = get_datos_from_pdf(pdf)
         print(f"Procesado {os.path.basename(archivo)} en {time.time() - start:.2f} segundos")
         return data
     except Exception as e:
-        print(f"Error procesando {archivo}: {e}")
+        print(f"Error procesando {e}")
         return None
 
 def process_all_pdfs(archivos: list[str])->list:
@@ -109,6 +109,9 @@ def main_process(archivos: list, destino: str) -> None:
     df.insert(1, 'MIC - DTA', nombres_archivos) 
     df = trasnform_df(df)
     
+    TRANSPORTE_CAMPO_9 = get_TRANSPORTE_CAMPO_9(archivos)
+    df['TRANSPORTE CAMPO 9'] = TRANSPORTE_CAMPO_9
+    
     # Guardar el df en el archivo Excel
     df.to_excel(destino, index=False)
     # Ajustar el ancho de las columnas automáticamente
@@ -138,4 +141,4 @@ def main_process(archivos: list, destino: str) -> None:
 if __name__ == "__main__":
     archivos = listar_archivos_pdf('C:/Users/Usuario/Desktop/Rapha/pdfs-to-excel/testing-data')
     
-    pdf_a_xml(archivos[0])
+    # 

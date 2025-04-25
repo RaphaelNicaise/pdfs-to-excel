@@ -1,6 +1,9 @@
-from pdfquery import PDFQuery
+
 import os 
 import re
+
+from pdfquery import PDFQuery
+import fitz
 
 # fecha_emision
 def check_format(pdf: PDFQuery):
@@ -26,10 +29,10 @@ def get_datos_from_pdf(pdf: PDFQuery) -> dict:
         #ORDEN
         #FACTURA Nº
         #EXPORTADOR (r/z de remitente)
-        "DESTINATARIO": get_DESTINATARIO(pdf), # FALTA CORTAAAAAAAAAAAAAAAR
+        "DESTINATARIO": get_DESTINATARIO(pdf), # FALTA CORTAR DIRECCION SOLO (R/Z)
         "TRANSPORTE CAMPO 1": get_TRANSPORTE_CAMPO_1(pdf), # listo
         #NACIONALIDAD TRANSPORTE
-        "TRANSPORTE CAMPO 9": get_TRANSPORTE_CAMPO_9(pdf), # CORTA DEL NOMBRE HASTA LA ULTIMA LETRA
+        # TRANSPORTE CAMPO 9 (SE INGRESA DESPUES)
         "TRACTOR": get_TRACTOR(pdf), # listo
         "SEMI": get_SEMI(pdf), # listo 
         "DESTINO": get_DESTINO(pdf), # listo
@@ -37,7 +40,7 @@ def get_datos_from_pdf(pdf: PDFQuery) -> dict:
         #PRODUCTO
         "KILOS BRUTOS": get_PESO_BRUTO(pdf), # listo
         "VALOR FOB": get_VALOR_FOT(pdf), # listo
-        #PRECINTO
+        "PRECINTO": get_PRECINTO(pdf),
         
         
         "descripcion_mercancia": get_descripcion_mercancia(pdf), # falta cortar para que se divida en ORDEN, FACTURA Y PRODUCTO (el producto lo saco con la logica)
@@ -109,25 +112,7 @@ def get_DESTINO(pdf: PDFQuery) -> str:
     except KeyError as e:
         print(f"Error: {e}")
         return ""
-    
 
-# camion_original
-
-
-def get_TRANSPORTE_CAMPO_9(pdf: PDFQuery):
-    # siguiente de esto CAMINH?O ORIGINAL : Nome e endereco do proprietario texto
-    # siguiente de texto, primera letra
-    x0, x1, y0, y1 = 31.52, 634.96, 306.04, 693.48
-
-    texto = pdf.pq('LTRect:in_bbox("%s, %s, %s, %s")' % (x0, y0, x1, y1)).text()
-
-    # Use regex to extract the text between the specified phrases
-    match = re.search(r'CAMINH\?O ORIGINAL : Nome e endereco do proprietario(.*?)CAMION SUBSTITUTO', texto, re.DOTALL)
-    result = match.group(1).strip() if match else None
-    return result
-    
-
-    
 
 # placa_camion
 
@@ -335,3 +320,45 @@ def get_descripcion_mercancia(pdf: PDFQuery) -> str:
 #         return ""
     
 
+# ESTE VA APARTE, EN EL TRANSFORM_DF,se hace despues 
+def get_TRANSPORTE_CAMPO_9(archivos: list[str]):
+    """_summary_
+
+    Args:
+        archivo (str): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    
+    data = []
+    for archivo in archivos:
+    
+        pdf = fitz.open(archivo).load_page(0)
+        # Load the page content as text
+        page_text = pdf.get_text("text")
+
+        texto_antes = 'CAMINH?O ORIGINAL : Nome e endereco do proprietario\n9\n'
+        texto_despues = 'CAMION SUBSTITUTO : Nombre y domicilio del propietario'
+
+        pattern = re.escape(texto_antes) + r"(.*?)" + re.escape(texto_despues)
+        
+        matches = re.findall(pattern, page_text, re.DOTALL)
+
+        data.append(matches[0].split('- ')[0].strip()) if matches else None
+    
+    return data
+
+
+# precinto
+def get_PRECINTO(pdf: PDFQuery):
+    """
+    Obtiene el precinto del archivo PDF usando pdfquery.
+    """
+    try:
+        text  =  pdf.pq('LTTextLineHorizontal:contains("37 Numero de los precintos")').next().text()
+    except KeyError as e:
+        print(f"Error: {e}")
+        return ""
+    
+    return text
