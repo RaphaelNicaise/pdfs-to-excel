@@ -5,6 +5,8 @@ import re
 from pdfquery import PDFQuery
 import fitz
 
+PAISES_MERCOSUR = ["ARGENTINA", "BRASIL", "PARAGUAY", "URUGUAY", "BOLIVIA", "CHILE", "PERU", "ECUADOR", "COLOMBIA","PANAMA", "VENEZUELA"]
+
 # fecha_emision
 def check_format(pdf: PDFQuery):
     """
@@ -28,8 +30,8 @@ def get_datos_from_pdf(pdf: PDFQuery) -> dict:
         "D.D.T": get_DDT(pdf), # listo
         #ORDEN
         #FACTURA Nº
-        #EXPORTADOR (r/z de remitente)
-        "DESTINATARIO": get_DESTINATARIO(pdf), # FALTA CORTAR DIRECCION SOLO (R/Z)
+        #EXPORTADOR (r/z de remitente) # ya scrapead, capaz agregar postproceso para cortar la direccion
+        "DESTINATARIO": get_DESTINATARIO(pdf), # FALTA CORTAR DIRECCION SOLO (R/Z) (lo mismo para esto)
         "TRANSPORTE CAMPO 1": get_TRANSPORTE_CAMPO_1(pdf), # listo
         #NACIONALIDAD TRANSPORTE
         # TRANSPORTE CAMPO 9 (SE INGRESA DESPUES)
@@ -40,7 +42,7 @@ def get_datos_from_pdf(pdf: PDFQuery) -> dict:
         #PRODUCTO
         "KILOS BRUTOS": get_PESO_BRUTO(pdf), # listo
         "VALOR FOB": get_VALOR_FOT(pdf), # listo
-        "PRECINTO": get_PRECINTO(pdf),
+        "PRECINTO": get_PRECINTO(pdf), # listo
         
         
         "descripcion_mercancia": get_descripcion_mercancia(pdf), # falta cortar para que se divida en ORDEN, FACTURA Y PRODUCTO (el producto lo saco con la logica)
