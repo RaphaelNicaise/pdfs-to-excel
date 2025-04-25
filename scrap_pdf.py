@@ -19,25 +19,27 @@ def get_datos_from_pdf(pdf: PDFQuery) -> dict:
     """
      
     datos = {
-        "fecha_emision": obtener_fecha_emision(pdf),
-        "porteador": get_porteador(pdf),
-        "ciudad_pais_partida": get_ciudad_pais_partida(pdf),
-        "ciudad_pais_destino": get_ciudad_pais_destino(pdf),
-        "camion_original": get_camion_original(pdf),
-        "placa_camion": get_placa_camion(pdf),
-        "placa_semiremolque": get_placa_semiremolque(pdf),
-        "carta_porte": get_carta_porte(pdf),
-        "aduana_destino": get_aduana_destino(pdf),
-        "destinatario": get_destinatario(pdf),
-        "valor_FOT": get_valor_FOT(pdf),
-        "flete_usd": get_flete_usd(pdf),
-        "consignatario": get_consignatario(pdf),
-        "tipo_bultos": get_tipo_bultos(pdf),
-        "cantidad_bultos": get_cantidad_bultos(pdf),
-        "peso_bruto": get_peso_bruto(pdf),
-        "documentos_anexos": get_documentos_anexos(pdf),
-        "descripcion_mercancia": get_descripcion_mercancia(pdf), # falta cortar
-        "conductor": get_conductor(pdf)
+        "FECHA CARGA": obtener_FECHA_CARGA(pdf), # listo
+        "C.R.T.": get_CRT(pdf), # listo
+        "D.D.T": get_DDT(pdf), # listo
+        #ORDEN
+        #FACTURA Nº
+        #EXPORTADOR (r/z de remitente)
+        "DESTINATARIO": get_DESTINATARIO(pdf), # FALTA CORTAAAAAAAAAAAAAAAR
+        "TRANSPORTE CAMPO 1": get_TRANSPORTE_CAMPO_1(pdf), # listo
+        #NACIONALIDAD TRANSPORTE
+        "TRANSPORTE CAMPO 9": get_TRANSPORTE_CAMPO_9(pdf), # FALTA CORTAR (r/z de campo 9)
+        "TRACTOR": get_TRACTOR(pdf), # listo
+        "SEMI": get_SEMI(pdf), # listo 
+        "DESTINO": get_DESTINO(pdf), # listo
+        "ADUANA DESTINO": get_ADUANA_DESTINO(pdf), # listo
+        #PRODUCTO
+        "KILOS BRUTOS": get_PESO_BRUTO(pdf), # listo
+        "VALOR FOB": get_VALOR_FOT(pdf), # listo
+        #PRECINTO
+        
+        
+        "descripcion_mercancia": get_descripcion_mercancia(pdf), # falta cortar para que se divida en ORDEN, FACTURA Y PRODUCTO (el producto lo saco con la logica)
     }
     return datos
 
@@ -53,7 +55,7 @@ def get_archivo_nombre(pdf: PDFQuery) -> str:
         print(f"Error: {e}")
         return ""
 
-def obtener_fecha_emision(pdf: PDFQuery) -> str:
+def obtener_FECHA_CARGA(pdf: PDFQuery) -> str:
     """Obtiene la fecha de emision del archivo PDF usando pdfquery.
     """
     try:
@@ -65,7 +67,7 @@ def obtener_fecha_emision(pdf: PDFQuery) -> str:
     
 # porteador
 
-def get_porteador(pdf) -> str:
+def get_TRANSPORTE_CAMPO_1(pdf) -> str:
     """Obtiene el nombre y domicilio del porteador del archivo PDF usando pdfquery.
     """
     try:
@@ -85,20 +87,19 @@ def get_porteador(pdf) -> str:
         return ""
 # ciudad_pais_partida
 
-def get_ciudad_pais_partida(pdf: PDFQuery) -> str:
-    """Obtiene la ciudad de partida del archivo PDF usando pdfquery.
-    """
-    try:
-        ciudad_partida_xml = pdf.pq('LTTextLineHorizontal:contains("Aduana, ciudad y pais de partida")').next()
-        return ciudad_partida_xml.text()
-    except KeyError as e:
-        print(f"Error: {e}")
-        return ""
-    
+# def get_ciudad_pais_partida(pdf: PDFQuery) -> str:
+#     """Obtiene la ciudad de partida del archivo PDF usando pdfquery.
+#     """
+#     try:
+#         ciudad_partida_xml = pdf.pq('LTTextLineHorizontal:contains("Aduana, ciudad y pais de partida")').next()
+#         return ciudad_partida_xml.text()
+#     except KeyError as e:
+#         print(f"Error: {e}")
+#         return ""
 
 # ciudad_pais_destino
 
-def get_ciudad_pais_destino(pdf: PDFQuery) -> str:
+def get_DESTINO(pdf: PDFQuery) -> str:
     """Obtiene la ciudad de destino del archivo PDF usando pdfquery.
     """
     try:
@@ -111,7 +112,7 @@ def get_ciudad_pais_destino(pdf: PDFQuery) -> str:
 
 # camion_original
 
-def get_camion_original(pdf: PDFQuery) -> str:
+def get_TRANSPORTE_CAMPO_9(pdf: PDFQuery) -> str:
     """Obtiene el camion original del archivo PDF usando pdfquery.
     """
     try:
@@ -128,7 +129,7 @@ def get_camion_original(pdf: PDFQuery) -> str:
 
 # placa_camion
 
-def get_placa_camion(pdf: PDFQuery) -> str:
+def get_TRACTOR(pdf: PDFQuery) -> str:
     """
     Obtiene la placa del camión del archivo PDF usando pdfquery.
     """
@@ -142,7 +143,7 @@ def get_placa_camion(pdf: PDFQuery) -> str:
     
 
 # placa_semiremolque
-def get_placa_semiremolque(pdf: PDFQuery)->str:
+def get_SEMI(pdf: PDFQuery)->str:
     """
     Obtiene la placa del semiremolque del archivo PDF usando pdfquery.
     """
@@ -156,7 +157,7 @@ def get_placa_semiremolque(pdf: PDFQuery)->str:
     
 
 # carta_de_porte
-def get_carta_porte(pdf: PDFQuery) -> str:
+def get_CRT(pdf: PDFQuery) -> str:
     """
     Obtiene la carta de porte del archivo PDF usando pdfquery.
     """
@@ -170,7 +171,7 @@ def get_carta_porte(pdf: PDFQuery) -> str:
    
 
 # aduana_destino
-def get_aduana_destino(pdf: PDFQuery) -> str:
+def get_ADUANA_DESTINO(pdf: PDFQuery) -> str:
     """
     Obtiene la aduana de destino del archivo PDF usando pdfquery.
     """
@@ -185,7 +186,7 @@ def get_aduana_destino(pdf: PDFQuery) -> str:
 
 # destinatario
 
-def get_destinatario(pdf: PDFQuery) -> str:
+def get_DESTINATARIO(pdf: PDFQuery) -> str:
     """
     Obtiene el destinatario del archivo PDF usando pdfquery.
     """
@@ -200,7 +201,7 @@ def get_destinatario(pdf: PDFQuery) -> str:
 
 # valor_FOT
 
-def get_valor_FOT(pdf: PDFQuery) ->str:
+def get_VALOR_FOT(pdf: PDFQuery) ->str:
     """
     Obtiene el valor FOT del archivo PDF usando pdfquery.
     """
@@ -215,66 +216,66 @@ def get_valor_FOT(pdf: PDFQuery) ->str:
     
 # flete_usd
 
-def get_flete_usd(pdf: PDFQuery) -> str:
-    """
-    Obtiene el flete en USD del archivo PDF usando pdfquery.
-    """
+# def get_flete_usd(pdf: PDFQuery) -> str:
+#     """
+#     Obtiene el flete en USD del archivo PDF usando pdfquery.
+#     """
     
-    try:
-        flete_usd_xml = pdf.pq(f'LTTextBoxHorizontal:contains("Frete em U$S")').next()
-        return flete_usd_xml.text().strip()
+#     try:
+#         flete_usd_xml = pdf.pq(f'LTTextBoxHorizontal:contains("Frete em U$S")').next()
+#         return flete_usd_xml.text().strip()
 
-    except KeyError as e:
-        print(f"Error: {e}")
-        return ""
+#     except KeyError as e:
+#         print(f"Error: {e}")
+#         return ""
     
 # consignatario
 
-def get_consignatario(pdf: PDFQuery) -> str:
-    """
-    Obtiene el consignatario del archivo PDF usando pdfquery.
-    """
+# def get_consignatario(pdf: PDFQuery) -> str:
+#     """
+#     Obtiene el consignatario del archivo PDF usando pdfquery.
+#     """
     
-    try:
-        consignatario_xml = pdf.pq(f'LTTextLineHorizontal:contains("35 Consignatario /Consignatario ")').next()
-        return consignatario_xml.text().replace('\n', '').strip()
+#     try:
+#         consignatario_xml = pdf.pq(f'LTTextLineHorizontal:contains("35 Consignatario /Consignatario ")').next()
+#         return consignatario_xml.text().replace('\n', '').strip()
 
-    except KeyError as e:
-        print(f"Error: {e}")
-        return ""
+#     except KeyError as e:
+#         print(f"Error: {e}")
+#         return ""
     
 # tipo_bultos
 
-def get_tipo_bultos(pdf: PDFQuery) -> str:
-    """
-    Obtiene el tipo de bultos del archivo PDF usando pdfquery.
-    """
+# def get_tipo_bultos(pdf: PDFQuery) -> str:
+#     """
+#     Obtiene el tipo de bultos del archivo PDF usando pdfquery.
+#     """
     
-    try:
-        tipo_bultos_xml = pdf.pq(f'LTTextBoxHorizontal:contains("Tipo dos volumes")').next()
-        return tipo_bultos_xml.text().strip()
+#     try:
+#         tipo_bultos_xml = pdf.pq(f'LTTextBoxHorizontal:contains("Tipo dos volumes")').next()
+#         return tipo_bultos_xml.text().strip()
 
-    except KeyError as e:
-        print(f"Error: {e}")
-        return ""
+#     except KeyError as e:
+#         print(f"Error: {e}")
+#         return ""
     
-# cantidad_bultos
-def get_cantidad_bultos(pdf: PDFQuery) -> str:
-    """
-    Obtiene la cantidad de bultos del archivo PDF usando pdfquery.
-    """
-    try:
-        cantidad_bultos_xml = pdf.pq(f'LTTextBoxHorizontal:contains("31 Cantidad de bultos ")').next()
-        return cantidad_bultos_xml.text().strip()
+# # cantidad_bultos
+# def get_cantidad_bultos(pdf: PDFQuery) -> str:
+#     """
+#     Obtiene la cantidad de bultos del archivo PDF usando pdfquery.
+#     """
+#     try:
+#         cantidad_bultos_xml = pdf.pq(f'LTTextBoxHorizontal:contains("31 Cantidad de bultos ")').next()
+#         return cantidad_bultos_xml.text().strip()
 
-    except KeyError as e:
-        print(f"Error: {e}")
-        return ""
+#     except KeyError as e:
+#         print(f"Error: {e}")
+#         return ""
     
     
 # peso_bruto
 
-def get_peso_bruto(pdf: PDFQuery) -> str:
+def get_PESO_BRUTO(pdf: PDFQuery) -> str:
 
     """
     Obtiene el peso bruto del archivo PDF usando pdfquery.
@@ -290,7 +291,7 @@ def get_peso_bruto(pdf: PDFQuery) -> str:
 
 # documentos_anexos
 
-def get_documentos_anexos(pdf: PDFQuery) -> str:
+def get_DDT(pdf: PDFQuery) -> str:
     """
     Obtiene los documentos anexos del archivo PDF usando pdfquery.
     """
@@ -319,16 +320,16 @@ def get_descripcion_mercancia(pdf: PDFQuery) -> str:
 
 # conductor
 
-def get_conductor(pdf: PDFQuery) -> str:
-    """
-    Obtiene el nombre del conductor del archivo PDF usando pdfquery.
-    """
+# def get_conductor(pdf: PDFQuery) -> str:
+#     """
+#     Obtiene el nombre del conductor del archivo PDF usando pdfquery.
+#     """
     
-    try:
-        conductor_xml = pdf.pq(f'LTTextLineHorizontal:contains("CONDUCTOR 1")')
-        return conductor_xml.text().strip()
-    except KeyError as e:
-        print(f"Error al obtener el nombre del archivo: {e}")
-        return ""
+#     try:
+#         conductor_xml = pdf.pq(f'LTTextLineHorizontal:contains("CONDUCTOR 1")')
+#         return conductor_xml.text().strip()
+#     except KeyError as e:
+#         print(f"Error al obtener el nombre del archivo: {e}")
+#         return ""
     
 

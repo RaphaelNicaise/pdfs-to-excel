@@ -5,7 +5,7 @@ import pandas as pd
 from pdfquery import PDFQuery
 
 from scrap_pdf import get_datos_from_pdf, check_format
-from utils import listar_archivos_pdf
+from utils import listar_archivos_pdf, pdf_a_xml
 from openpyxl import load_workbook
 
 def trasnform_df(df)->pd.DataFrame:
@@ -19,16 +19,27 @@ def trasnform_df(df)->pd.DataFrame:
         pd.DataFrame: dataframe transformado
     """
     
-    df['documentos_anexos'] = df['documentos_anexos'].str.extract(r'Destinacion:\s*(.*?)\s*F\. Ofic')
+
+    meses_a_numeros = {
+        "ENE": "01", "FEB": "02", "MAR": "03", "ABR": "04",
+        "MAY": "05", "JUN": "06", "JUL": "07", "AGO": "08",
+        "SEP": "09", "OCT": "10", "NOV": "11", "DIC": "12"
+    }
+
+    for mes_texto, mes_numero in meses_a_numeros.items():
+        df['FECHA CARGA'] = df['FECHA CARGA'].str.replace(mes_texto, mes_numero, regex=False)
+
+    df['FECHA CARGA'] = pd.to_datetime(df['FECHA CARGA'], format='%d-%m-%y').dt.strftime('%d/%m/%Y')
+
+    df['D.D.T'] = df['D.D.T'].str.extract(r'Destinacion:\s*(.*?)\s*F\. Ofic')
     
-    df['conductor'] = df['conductor'].str.extract(r'CONDUCTOR\s*\d*:\s*(.*)')
     df['descripcion_mercancia'] = df['descripcion_mercancia'].str.replace(r'cid:\d+', '', regex=True)
+
+
     
     df = df.astype({
-        'valor_FOT': 'float',
-        'flete_usd': 'float',
-        'cantidad_bultos': 'int',
-        'peso_bruto': 'float'      
+        'VALOR FOB': 'float',
+        'KILOS BRUTOS': 'float'      
     })
     
     return df
@@ -94,7 +105,7 @@ def main_process(archivos: list, destino: str) -> None:
     
     df = pd.DataFrame(lista)
     
-    df.insert(0, 'archivo', nombres_archivos) 
+    df.insert(1, 'MIC - DTA', nombres_archivos) 
     df = trasnform_df(df)
     
     # Guardar el df en el archivo Excel
@@ -124,9 +135,6 @@ def main_process(archivos: list, destino: str) -> None:
 # despues dividir por mes y año
 
 if __name__ == "__main__":
-    archivos = listar_archivos_pdf('C:/Users/Usuario/Desktop/Rapha/pdfs-to-excel/testing-data/03-MARZO-2025/')
+    archivos = listar_archivos_pdf('C:/Users/Usuario/Desktop/Rapha/pdfs-to-excel/testing-data')
     
-    lista = process_all_pdfs(archivos)
-    df = pd.DataFrame(lista)
-    print(df)
-    df.to_excel('data/data.xlsx', index=False)
+    pdf_a_xml(archivos[0])

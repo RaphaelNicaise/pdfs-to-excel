@@ -1,4 +1,5 @@
 venv
+vvenv
 build/
 dist/*.lnk
 *.spec

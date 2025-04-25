@@ -46,4 +46,4 @@ def pdf_a_xml(pdf: str) -> None:
     pdf.tree.write('output.xml', encoding='utf-8', xml_declaration=True, pretty_print=True)
     
 if __name__ == "__main__":
-    print(listar_archivos_pdf('C:/Users/Usuario/Desktop/Rapha/pdfs-to-excel/testing-data/03-MARZO-2025/'))
+    print(listar_archivos_pdf('C:/Users/Usuario/Desktop/Rapha/pdfs-to-excel/testing-data'))
