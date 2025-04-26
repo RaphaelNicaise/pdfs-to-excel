@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import filedialog, simpledialog
 
 from utils import check_single_instance
-from processing import main_process
+from ProcesamientoAG.processing_AG import main_process_AG
 from console_redirect import ConsoleRedirect
 
 
@@ -84,7 +84,7 @@ def convertir_a_excel():
     def ejecutar():
         try:
             print("------- Iniciando procesamiento -------")
-            main_process(archivos, excel_path)
+            main_process_AG(archivos, excel_path)
             print(f"\nArchivos convertidos a Excel en: {excel_path}\n")
             tk.messagebox.showinfo("Éxito", f"Archivos convertidos a Excel en: {excel_path}")
         except Exception as e:
