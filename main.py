@@ -133,6 +133,8 @@ def accion_seleccionar_archivos(app, frame, etiqueta, boton_convertir, contador_
         boton_convertir.unbind("<Enter>")
         boton_convertir.unbind("<Leave>")
 
+
+
 def limpiar_estado(frame, etiqueta, boton_convertir, contador_pdfs):
     """
     Limpia el estado de la interfaz, eliminando archivos cargados y deshabilitando el botón de conversión.
@@ -193,6 +195,7 @@ def main():
         height=40,
         font=ctk.CTkFont(size=14, weight="bold")
     )
+    mostrar_tooltip(boton_seleccionar, "Selecciona una carpeta para procesar todos los PDFs que contiene.")
     boton_seleccionar.pack(pady=(0, 10))
 
     boton_seleccionar_archivos = ctk.CTkButton(
@@ -203,6 +206,7 @@ def main():
         height=40,
         font=ctk.CTkFont(size=14, weight="bold")
     )
+    mostrar_tooltip(boton_seleccionar_archivos, "Selecciona archivos PDF específicos para procesar.")
     boton_seleccionar_archivos.pack(pady=(0, 20))
 
     global boton_convertir
@@ -232,6 +236,7 @@ def main():
         font=ctk.CTkFont(size=13, weight="bold"),
         command=lambda: limpiar_estado(frame_scroll, etiqueta_path, boton_convertir, contador_pdfs)
     )
+    mostrar_tooltip(boton_limpiar, "Limpiar estado y archivos cargados.")
     boton_limpiar.pack()
 
 
