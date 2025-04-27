@@ -1,13 +1,23 @@
 import time
 import os
+import re
 
 import pandas as pd
 from pdfquery import PDFQuery
 
-from ProcesamientoAG.scrap_pdf_AG import get_datos_from_pdf, check_format, get_TRANSPORTE_CAMPO_9, get_DESTINATARIO
+from ProcesamientoAG.scrap_pdf_AG import (
+    get_datos_from_pdf, 
+    check_format, 
+    get_TRANSPORTE_CAMPO_9, 
+    get_DESTINATARIO,
+    get_NACIONALIDAD_TRANSPORTE
+)
+
 from utils import listar_archivos_pdf
 from openpyxl import load_workbook
 
+
+    
 def trasnform_df_AG(df)->pd.DataFrame:
     """ Transformar el df para que tenga el formato correcto
     y los tipos de datos correctos
@@ -19,7 +29,8 @@ def trasnform_df_AG(df)->pd.DataFrame:
         pd.DataFrame: dataframe transformado
     """
     
-
+    print("Transformando el conjunto de datos...")
+    
     meses_a_numeros = {
         "ENE": "01", "FEB": "02", "MAR": "03", "ABR": "04",
         "MAY": "05", "JUN": "06", "JUL": "07", "AGO": "08",
@@ -49,16 +60,20 @@ def trasnform_df_AG(df)->pd.DataFrame:
     #LA NUEVA MANERA S.A.	HARINA DE TRIGO
     #SYNGENTA	ACEITE
     #SI NO CUMPLE CON LAS ANTERIORES	INDETERMINADO
+    
+
+    df['PRODUCTO'] = map_producto(df['EXPORTADOR'])
 
     df['descripcion_mercancia'] = df['descripcion_mercancia'].str.replace(r'cid:\d+', '', regex=True)
-
-    df
-
+    
+    df = agregar_factura_y_orden(df)
     
     df = df.astype({
         'VALOR FOB': 'float',
         'KILOS BRUTOS': 'float'      
     })
+    
+    # ORDENAR COLUMNAS
     
     return df
 
@@ -112,7 +127,7 @@ def process_all_pdfs(archivos: list[str]) -> tuple[list, list]:
         print(f"Error procesando archivos: {e}")
         return [], []
     
-    print(f"Procesados {len(archivos_validos)} archivos válidos en {time.time() - start:.2f} segundos")
+    print(f"Procesados {len(archivos_validos)} archivos válidos en {(time.time() - start):.2f} segundos")
     return data, archivos_validos
 
 def main_process_AG(archivos: list, destino: str) -> None:
@@ -140,7 +155,8 @@ def main_process_AG(archivos: list, destino: str) -> None:
     DESTINATARIO = get_DESTINATARIO(archivos_validos)
     df['DESTINATARIO'] = DESTINATARIO
     
-    #NACIONALIDAD_TRANSPORTE = 
+     
+    df['NACIONALIDAD TRANSPORTE'] = get_NACIONALIDAD_TRANSPORTE(archivos_validos)
     
     df = trasnform_df_AG(df)
     
@@ -162,13 +178,108 @@ def main_process_AG(archivos: list, destino: str) -> None:
         adjusted_width = max_length + 2
         sheet.column_dimensions[column_letter].width = adjusted_width
 
+    # CREA FOLDER
     workbook.save(destino)
     workbook.close()
-    print(f"Acomodando las columnas de excel...")
+    
 
-# dejar un archivo general
+# funcion para mapear el exportador al producto, se crea aca porque es una transformacion en base a otro campo, y no un scrapeo
+def map_producto(exportador: pd.Series) -> pd.Series:
+        """Mapea el exportador al producto correspondiente.
 
-# despues dividir por mes y año
+        Args:
+            exportador (pd.Series): Columna de exportadores.
+
+        Returns:
+            pd.Series: Columna con los productos mapeados.
+        """
+        mapping = {
+            'PBBPOLISUR SOCIEDAD DE RESPONS': 'POLIETILENO',
+            'UNIPAR INDUPA SAIC': 'POLICLORURO DE VINILO',
+            'COMPA?IA MEGA SOCIEDAD ANONIMA': 'GAS LICUADO',
+            'COMPA?IA MOLINERA DEL SUR S. A': 'SEMOLA DE TRIGO',
+            'TRANSPORTADORA DE GAS DEL SUR': 'GAS LICUADO',
+            'VITERRA ARGENTINA S.A.': 'ACEITE / PELLETS / LECITINA',
+            'LA NUEVA MANERA S.A.': 'HARINA DE TRIGO',
+            'SYNGENTA': 'ACEITE'
+        }
+        return exportador.map(mapping).fillna('INDETERMINADO')
+
+def extraer_factura_y_orden(descripcion_mercancia: pd.Series) -> pd.DataFrame:
+    """ Obtiene la factura y orden de la descripcion de mercancia
+
+    Args:
+        descripcion_mercancia (pd.Series): _description_
+
+    Returns:
+        pd.DataFrame: _description_
+    """
+    # Definir las expresiones regulares
+    regex_factura_proforma = re.compile(r'FACTURA\s+PROFORMA\s+(\d{6,})', re.IGNORECASE)
+    regex_factura_nro = re.compile(r'FACTURA\s+NRO\.\s+([A-Z0-9-]{10,})', re.IGNORECASE)
+    regex_factura_exportacion = re.compile(r'FACTURA\s+(?:DE\s+)?EXPORTACION(?:\s+E)?\s+([0-9]{4,5}-[A-Z0-9]{8})', re.IGNORECASE)
+    regex_fact_de_exp = re.compile(r'FACT(?:\.|URA)?\.?DE\.?EXP\.?\s*([0-9]{4}-[0-9]{8})', re.IGNORECASE)
+    regex_factura_simple = re.compile(r'\b([0-9]{4}-[0-9]{8})\b')
+    regex_orden = re.compile(r'ORDEN\s+(\d{9,10})', re.IGNORECASE)
+
+    resultados = []
+
+    for desc in descripcion_mercancia:
+        if not isinstance(desc, str):
+            resultados.append({'FACTURA Nº': '', 'ORDEN': ''})
+            continue
+
+        desc_upper = desc.upper()
+        desc_upper = re.sub(r'SHIPMENT\s*:\s*\d+', '', desc_upper)
+
+        factura = ''
+        orden = ''
+        
+        # Buscar FACTURA PROFORMA
+        if match := regex_factura_proforma.search(desc_upper):
+            factura = match.group(1)  
+            orden = match.group(1)
+        else:
+            match_orden = regex_orden.search(desc_upper)
+            if match_orden:
+                orden = match_orden.group(1)
+            if match := regex_factura_exportacion.search(desc_upper):
+                factura = match.group(1)
+            else:
+                if match := regex_factura_nro.search(desc_upper):
+                    factura = match.group(1)
+                else:
+                    if match := regex_fact_de_exp.search(desc_upper):
+                        factura = match.group(1)
+                    else:
+                        if match := regex_factura_simple.search(desc_upper):
+                            factura = match.group(1)
+        resultados.append({'FACTURA Nº': factura, 'ORDEN': orden})
+
+    return pd.DataFrame(resultados)
+
+def agregar_factura_y_orden(df: pd.DataFrame) -> pd.DataFrame:
+    """
+        Toma un DataFrame, elimina la columna 'descripcion_mercancia',
+        extrae las columnas 'FACTURA Nº' y 'ORDEN' usando la función extraer_factura_y_orden,
+        y las inserta en el DataFrame.
+
+        Args:
+            df (pd.DataFrame): DataFrame original.
+
+        Returns:
+            pd.DataFrame: DataFrame modificado con las columnas 'FACTURA Nº' y 'ORDEN'.
+    """
+    # Extraer 'FACTURA Nº' y 'ORDEN' de 'descripcion_mercancia'
+    factura_orden_df = extraer_factura_y_orden(df['descripcion_mercancia'])
+        
+    # Eliminar la columna 'descripcion_mercancia'
+    df = df.drop(columns=['descripcion_mercancia'])
+        
+        # Concatenar el DataFrame original con las nuevas columnas
+    df = pd.concat([df, factura_orden_df], axis=1)
+        
+    return df
 
 if __name__ == "__main__":
     archivos = listar_archivos_pdf('C:/Users/Usuario/Desktop/Rapha/pdfs-to-excel/testing-data')

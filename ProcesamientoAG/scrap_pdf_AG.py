@@ -1,3 +1,5 @@
+# FUNCIONES PARA SCRAPEAR LOS PDFS
+
 
 import os 
 import re
@@ -27,18 +29,18 @@ def get_datos_from_pdf(pdf: PDFQuery) -> dict:
         "FECHA CARGA": obtener_FECHA_CARGA(pdf), # listo
         "C.R.T.": get_CRT(pdf), # listo
         "D.D.T": get_DDT(pdf), # listo
-        #ORDEN
-        #FACTURA Nº
+        #ORDEN  listo (SE INGRESA DESPUES dependiendente de descripcion mercancia)
+        #FACTURA Nº listo (SE  INGRESA DESPUES dependiendente de descripcion mercancia)
         "EXPORTADOR": get_EXPORTADOR(pdf), # listo
         #DESTINATARIO: # SE INGRESA DESPUES listo
         "TRANSPORTE CAMPO 1": get_TRANSPORTE_CAMPO_1(pdf), # listo (se procesa en el main_process_AG)
-        #NACIONALIDAD TRANSPORTE
+        #NACIONALIDAD TRANSPORTE # listo
         # TRANSPORTE CAMPO 9 (SE INGRESA DESPUES) listo per quedan un par de datos raros
         "TRACTOR": get_TRACTOR(pdf), # listo
         "SEMI": get_SEMI(pdf), # listo 
         "DESTINO": get_DESTINO(pdf), # listo
         "ADUANA DESTINO": get_ADUANA_DESTINO(pdf), # listo
-        #PRODUCTO
+        #PRODUCTO # INGRESA DESPUES EN BASE A TRANSPORTE CAMPO 1
         "KILOS BRUTOS": get_PESO_BRUTO(pdf), # listo
         "VALOR FOB": get_VALOR_FOT(pdf), # listo
         "PRECINTO": get_PRECINTO(pdf), # listo
@@ -171,6 +173,30 @@ def get_ADUANA_DESTINO(pdf: PDFQuery) -> str:
         return ""
     
     
+def get_NACIONALIDAD_TRANSPORTE(archivos_validos: list[str]):
+    data = []
+    for archivo in archivos_validos:
+        pdf = fitz.open(archivo).load_page(0)
+        # Load the page content as text
+        page_text = pdf.get_text("text")
+
+        #print(page_text)
+
+        texto_antes = 'Nombre y domicilio del porteador'
+        texto_despues = '7 Aduana, ciudad y pais de partida'
+        pattern = re.escape(texto_antes) + r"(.*?)" + re.escape(texto_despues)
+        
+        matches = re.findall(pattern, page_text, re.DOTALL)
+
+        if matches:
+            pais = re.search(r'\b(?:ARGENTINA|BRASIL|PARAGUAY|URUGUAY|VENEZUELA|CHILE|BOLIVIA)\b', matches[0])
+            if pais:
+                data.append(pais.group())
+            else:
+                data.append('NO ENCONTRADO')
+        else:
+            data.append('NO ENCONTRADO')
+    return data    
 
 # destinatario
 
