@@ -6,4 +6,5 @@ dist/*.lnk
 __pycache__/
 *.xml
 *.xlsx
-testing-data/03-MARZO-2025
+testing-data
+testing-data/*
