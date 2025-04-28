@@ -10,6 +10,7 @@ from utils import check_single_instance
 from ProcesamientoAG.processing_AG import main_process_AG
 from console_redirect import ConsoleRedirect
 
+carpeta = None 
 
 def configurar_apariencia():
     ctk.set_appearance_mode("dark")
@@ -47,8 +48,12 @@ def seleccionar_carpeta():
     return filedialog.askdirectory()
 
 def seleccionar_archivos():
+    
     archivos = filedialog.askopenfilenames(filetypes=[("Archivos PDF", "*.pdf")], title="Seleccionar archivo(s) PDF")
-    return list(archivos)
+    archivos = list(archivos)
+    carpeta_padre = os.path.dirname(archivos[0]) if archivos else None
+    return archivos, carpeta_padre
+
 
 def mostrar_archivos_pdf(frame, archivos_absolutos):
     limpiar_frame(frame)
@@ -82,7 +87,7 @@ def convertir_a_excel():
     def ejecutar():
         try:
             print("------- Iniciando procesamiento -------")
-            main_process_AG(archivos, carpeta_destino)
+            main_process_AG(archivos, carpeta_destino, carpeta)
             print(f"\nArchivos convertidos a Excel en: {carpeta_destino}\n")
             tk.messagebox.showinfo("Éxito", f"Archivos convertidos a Excel en: {carpeta_destino}")
         except Exception as e:
@@ -92,19 +97,20 @@ def convertir_a_excel():
             boton.configure(state="normal", text="📤 Convertir a Excel", fg_color="#00aa88")
     threading.Thread(target=ejecutar).start()
 
-def crear_detalle_operacion():
-    
-    AG_excel = filedialog.askopenfilename(filetypes=[("Seleccionar un AG", "*.xlsx")], title="Seleccionar archivo Excel (AG)")
-    
-    
-    if not AG_excel:
-        tk.messagebox.showwarning("Advertencia", "No se seleccionó ningún archivo Excel.")
-        return
+#def crear_detalle_operacion():
+#    
+#    AG_excel = filedialog.askopenfilename(filetypes=[("Seleccionar un AG", "*.xlsx")], title="Seleccionar archivo Excel (AG)")
+#    
+#    
+#    if not AG_excel:
+#        tk.messagebox.showwarning("Advertencia", "No se seleccionó ningún archivo Excel.")
+#        return
     
     
     
 
 def accion_seleccionar_carpeta(app, frame, etiqueta, boton_convertir, contador_pdfs):
+    global carpeta  # Hacer la variable carpeta global
     carpeta = seleccionar_carpeta()
     if carpeta:
         archivos_absolutos = [os.path.join(carpeta, f) for f in os.listdir(carpeta) if f.lower().endswith('.pdf')]
@@ -126,7 +132,8 @@ def accion_seleccionar_carpeta(app, frame, etiqueta, boton_convertir, contador_p
         boton_convertir.unbind("<Leave>")
 
 def accion_seleccionar_archivos(app, frame, etiqueta, boton_convertir, contador_pdfs):
-    archivos_absolutos = seleccionar_archivos()
+    global carpeta  # Hacer la variable carpeta global
+    archivos_absolutos, carpeta = seleccionar_archivos()
     if archivos_absolutos:
         mostrar_archivos_pdf(frame, archivos_absolutos)
         total_peso = sum(os.path.getsize(f) for f in archivos_absolutos)
@@ -249,18 +256,20 @@ def main():
     mostrar_tooltip(boton_limpiar, "Limpiar estado y archivos cargados.")
     boton_limpiar.pack()
 
-    boton_detalles = ctk.CTkButton(
-        columna_derecha,
-        text="📋 Detalle de Operacion",
-        fg_color="#00aa88",
-        hover_color="#00ccaa",
-        width=240,
-        height=40,
-        command=crear_detalle_operacion,
-        font=ctk.CTkFont(size=13, weight="bold")
-    )
-    mostrar_tooltip(boton_detalles, "Crear un excel -> Detalles de Operaciones en base a un AG")
-    boton_detalles.pack(side="bottom", pady=(10, 0))
+    #boton_detalles = ctk.CTkButton(
+    #    columna_derecha,
+    #    text="📋 Detalle de Operacion",
+    #    fg_color="#00aa88",
+    #    hover_color="#00ccaa",
+    #    width=240,
+    #    height=40,
+    #    command=crear_detalle_operacion,
+    #    font=ctk.CTkFont(size=13, weight="bold")
+    #)
+    #mostrar_tooltip(boton_detalles, "Crear un excel -> Detalles de Operaciones en base a un AG")
+    #boton_detalles.pack(side="bottom", pady=(10, 0))
+    
     app.mainloop()
+    
 if __name__ == "__main__":
     main()

@@ -143,7 +143,7 @@ def process_all_pdfs(archivos: list[str]) -> tuple[list, list]:
     print(f"Procesados {len(archivos_validos)} archivos válidos en {(time.time() - start):.2f} segundos")
     return data, archivos_validos
 
-def main_process_AG(archivos: list, destino: str) -> None:
+def main_process_AG(archivos: list, destino: str, path_carpeta_archivos) -> None:
     """
     Procesa todos los archivos PDF, los convierte a df de pandas y los guarda en un archivo Excel.
     Args:
@@ -174,7 +174,7 @@ def main_process_AG(archivos: list, destino: str) -> None:
     
     df = trasnform_df_AG(df)
     # REORDENAR COLUMNAS
-    integrate_files(destino, df)
+    integrate_files(destino, df, path_carpeta_archivos)
     
 
 # funcion para mapear el exportador al producto, se crea aca porque es una transformacion en base a otro campo, y no un scrapeo
@@ -195,7 +195,8 @@ def map_producto(exportador: pd.Series) -> pd.Series:
             'TRANSPORTADORA DE GAS DEL SUR': 'GAS LICUADO',
             'VITERRA ARGENTINA S.A.': 'ACEITE / PELLETS / LECITINA',
             'LA NUEVA MANERA S.A.': 'HARINA DE TRIGO',
-            'SYNGENTA': 'ACEITE'
+            'SYNGENTA': 'ACEITE',
+            'LA NUEVA MANERA S.A.': 'HARINA DE TRIGO'
         }
         return exportador.map(mapping).fillna('INDETERMINADO')
 

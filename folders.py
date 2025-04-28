@@ -28,7 +28,7 @@ def create_structure_folders(folder_path: str, empresas: list[str])-> None:
         empresas (list[str]): _description_
     """
     
-def integrate_files(destino: str, df)-> None:
+def integrate_files(destino: str, df, carpeta_pdfs)-> None:
     """ Esta funcion crea las carpetas por empresa dentro de una carpeta elegida en destino, y adentro de cada carpeta va el df filtrado por empresa, y por fuera el df general
 
     Args:
@@ -43,19 +43,20 @@ def integrate_files(destino: str, df)-> None:
     df.to_excel(general_excel_path, index=False)
     acomodar_columnas(general_excel_path)
     
-    empresas = list(set(df["TRANSPORTE CAMPO 1"])) # set para no tener repetidos y convierte a lista
-
+    empresas = list(set(df["TRANSPORTE CAMPO 1"])) # set para no tener repetidos y convierte a lista ( sin formatear)
+    df_mic_y_tp1 = df[['TRANSPORTE CAMPO 1', 'MIC - DTA']]
+    files_with_path = [os.path.join(carpeta_pdfs, file) for file in list(os.walk(carpeta_pdfs))[0][2] if file.endswith('.pdf')]
     for empresa in empresas:
         nombre_empresa_formateado = re.sub(r'[/:*?"<>|]', '', empresa).strip()
         empresa_folder = os.path.join(destino, nombre_empresa_formateado)
         os.makedirs(empresa_folder, exist_ok=True)
         
-        df_empresa = df[df['TRANSPORTE CAMPO 1'] == empresa]
-        
-        empresa_excel_path = os.path.join(empresa_folder, f"AG-{nombre_empresa_formateado}.xlsx")
-        df_empresa.to_excel(empresa_excel_path, index=False)
-        acomodar_columnas(empresa_excel_path) # acomoda las columnas de cada archivo
-    
+        lista_mics_de_empresa = list(df[df["TRANSPORTE CAMPO 1"] == empresa]['MIC - DTA'])
+        # Filter and copy files for each empresa
+        rutas_filtradas = [ruta for ruta in files_with_path if any(mic in ruta for mic in lista_mics_de_empresa)]
+
+        for ruta in rutas_filtradas:
+            shutil.copy(ruta, os.path.join(empresa_folder, os.path.basename(ruta)))
     
     
 def acomodar_columnas(path_excel):
