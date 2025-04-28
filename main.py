@@ -68,7 +68,7 @@ def limpiar_frame(frame):
 
 def convertir_a_excel():
     boton = convertir_a_excel.boton
-    archivos = getattr(boton, 'archivos_pdf', [])
+    archivos = getattr(boton, 'archivos_pdf', []) # obt
     if not archivos:
         tk.messagebox.showwarning("Advertencia", "No hay archivos para procesar.")
         return
@@ -91,6 +91,18 @@ def convertir_a_excel():
         finally:
             boton.configure(state="normal", text="📤 Convertir a Excel", fg_color="#00aa88")
     threading.Thread(target=ejecutar).start()
+
+def crear_detalle_operacion():
+    
+    AG_excel = filedialog.askopenfilename(filetypes=[("Seleccionar un AG", "*.xlsx")], title="Seleccionar archivo Excel (AG)")
+    
+    
+    if not AG_excel:
+        tk.messagebox.showwarning("Advertencia", "No se seleccionó ningún archivo Excel.")
+        return
+    
+    
+    
 
 def accion_seleccionar_carpeta(app, frame, etiqueta, boton_convertir, contador_pdfs):
     carpeta = seleccionar_carpeta()
@@ -237,7 +249,18 @@ def main():
     mostrar_tooltip(boton_limpiar, "Limpiar estado y archivos cargados.")
     boton_limpiar.pack()
 
-
+    boton_detalles = ctk.CTkButton(
+        columna_derecha,
+        text="📋 Detalle de Operacion",
+        fg_color="#00aa88",
+        hover_color="#00ccaa",
+        width=240,
+        height=40,
+        command=crear_detalle_operacion,
+        font=ctk.CTkFont(size=13, weight="bold")
+    )
+    mostrar_tooltip(boton_detalles, "Crear un excel -> Detalles de Operaciones en base a un AG")
+    boton_detalles.pack(side="bottom", pady=(10, 0))
     app.mainloop()
 if __name__ == "__main__":
     main()
