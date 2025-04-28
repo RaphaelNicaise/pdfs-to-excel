@@ -72,21 +72,19 @@ def convertir_a_excel():
     if not archivos:
         tk.messagebox.showwarning("Advertencia", "No hay archivos para procesar.")
         return
-    nombre_archivo = simpledialog.askstring("Nombre del archivo", "Ingrese el nombre para el archivo Excel (sin extensión):")
-    if not nombre_archivo:
-        return
-    carpeta_destino = filedialog.askdirectory(title="Seleccionar carpeta destino para Excel")
+    
+    carpeta_destino = filedialog.askdirectory(title="Seleccionar carpeta destino:")
     if not carpeta_destino:
         return
-    excel_path = os.path.join(carpeta_destino, f"{nombre_archivo}.xlsx")
+    
     boton.configure(state="disabled", text="⏳ Convirtiendo...", fg_color="#888888")
     boton.update_idletasks()
     def ejecutar():
         try:
             print("------- Iniciando procesamiento -------")
-            main_process_AG(archivos, excel_path)
-            print(f"\nArchivos convertidos a Excel en: {excel_path}\n")
-            tk.messagebox.showinfo("Éxito", f"Archivos convertidos a Excel en: {excel_path}")
+            main_process_AG(archivos, carpeta_destino)
+            print(f"\nArchivos convertidos a Excel en: {carpeta_destino}\n")
+            tk.messagebox.showinfo("Éxito", f"Archivos convertidos a Excel en: {carpeta_destino}")
         except Exception as e:
             print(f"\n❌ Error: {e}\n")
             tk.messagebox.showerror("Error", f"error: {e}")
