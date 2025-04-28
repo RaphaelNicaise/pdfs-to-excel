@@ -5,6 +5,9 @@ import re
 import pandas as pd
 from pdfquery import PDFQuery
 
+from folders import (
+    integrate_files
+)
 from ProcesamientoAG.scrap_pdf_AG import (
     get_datos_from_pdf, 
     check_format, 
@@ -44,23 +47,10 @@ def trasnform_df_AG(df)->pd.DataFrame:
 
     df['D.D.T'] = df['D.D.T'].str.extract(r'Destinacion:\s*(.*?)\s*F\. Ofic')
     
-    # df['NACIONALIDAD TRANSPORTE']
     
     df['EXPORTADOR'] = df['EXPORTADOR'].str.split('\n').str[0]
     
-    #df['PRODUCTO'] = #LOGICA EN BASE AL EXPORTADOR
-    
-    #SI EL EXPORTADOR ES	LA MERCADERIA ES
-    #PBBPOLISUR SOCIEDAD DE RESPONS	POLIETILENO
-    #UNIPAR INDUPA SAIC	POLICLORURO DE VINILO
-    #COMPA?IA MEGA SOCIEDAD ANONIMA	GAS LICUADO
-    #COMPA?IA MOLINERA DEL SUR S. A	SEMOLA DE TRIGO
-    #TRANSPORTADORA DE GAS DEL SUR	GAS LICUADO
-    #VITERRA ARGENTINA S.A.	ACEITE / PELLETS / LECITINA
-    #LA NUEVA MANERA S.A.	HARINA DE TRIGO
-    #SYNGENTA	ACEITE
-    #SI NO CUMPLE CON LAS ANTERIORES	INDETERMINADO
-    
+    df = transform_campo9(df)
 
     df['PRODUCTO'] = map_producto(df['EXPORTADOR'])
 
@@ -74,6 +64,29 @@ def trasnform_df_AG(df)->pd.DataFrame:
     })
     
     # ORDENAR COLUMNAS
+    orden = [
+        'FECHA CARGA',
+        'MIC - DTA',
+        'C.R.T.',
+        'D.D.T',
+        'ORDEN',
+        'FACTURA Nº',
+        'EXPORTADOR',
+        'DESTINATARIO',
+        'TRANSPORTE CAMPO 1',
+        'NACIONALIDAD TRANSPORTE',
+        'TRANSPORTE CAMPO 9',
+        'TRACTOR',
+        'SEMI',
+        'DESTINO',
+        'ADUANA DESTINO',
+        'PRODUCTO',
+        'KILOS BRUTOS',
+        'VALOR FOB',
+        'PRECINTO'
+    ]
+    
+    df = df[orden]
     
     return df
 
@@ -152,6 +165,7 @@ def main_process_AG(archivos: list, destino: str) -> None:
     TRANSPORTE_CAMPO_9 = get_TRANSPORTE_CAMPO_9(archivos_validos)
     df['TRANSPORTE CAMPO 9'] = TRANSPORTE_CAMPO_9
     
+    
     DESTINATARIO = get_DESTINATARIO(archivos_validos)
     df['DESTINATARIO'] = DESTINATARIO
     
@@ -159,28 +173,8 @@ def main_process_AG(archivos: list, destino: str) -> None:
     df['NACIONALIDAD TRANSPORTE'] = get_NACIONALIDAD_TRANSPORTE(archivos_validos)
     
     df = trasnform_df_AG(df)
-    
-    
-    df.to_excel(destino, index=False)
-    
-    workbook = load_workbook(destino)
-    sheet = workbook.active
-
-    for column in sheet.columns:
-        max_length = 0
-        column_letter = column[0].column_letter  # Obtener la letra de la columna
-        for cell in column:
-            try:
-                if cell.value:
-                    max_length = max(max_length, len(str(cell.value)))
-            except:
-                pass
-        adjusted_width = max_length + 2
-        sheet.column_dimensions[column_letter].width = adjusted_width
-
-    # CREA FOLDER
-    workbook.save(destino)
-    workbook.close()
+    # REORDENAR COLUMNAS
+    integrate_files(destino, df)
     
 
 # funcion para mapear el exportador al producto, se crea aca porque es una transformacion en base a otro campo, y no un scrapeo
@@ -279,6 +273,21 @@ def agregar_factura_y_orden(df: pd.DataFrame) -> pd.DataFrame:
         # Concatenar el DataFrame original con las nuevas columnas
     df = pd.concat([df, factura_orden_df], axis=1)
         
+    return df
+
+def transform_campo9(df: pd.DataFrame) -> pd.DataFrame:
+    """Transforma la columna 'TRANSPORTE CAMPO 9' del DataFrame.
+
+    Args:
+        df (pd.DataFrame): DataFrame original.
+
+    Returns:
+        pd.DataFrame: DataFrame modificado.
+    """
+    df['TRANSPORTE CAMPO 9'] = df['TRANSPORTE CAMPO 9'].str.replace('\n', '', regex=True)# Compilar el patrón regex
+    patron = re.compile(r'(?: & -|-).*', re.IGNORECASE)
+
+    df['TRANSPORTE CAMPO 9'] = df['TRANSPORTE CAMPO 9'].str.replace(patron, '', regex=True).str.strip()
     return df
 
 if __name__ == "__main__":
