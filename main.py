@@ -108,7 +108,7 @@ def convertir_a_excel():
     threading.Thread(target=ejecutar).start()
 
 def crear_detalle_operacion():
-    AG_excel = filedialog.askopenfilename(filetypes=[("Seleccionar un AG de empresa especifico", "*.xlsx")], title="Seleccionar archivo Excel (AG)")
+    AG_excel = filedialog.askopenfilename(filetypes=[("Seleccionar un AG de empresa especifico", "*.xlsx")], title="Seleccionar archivo Excel (AG de empresa especifico)")
     
     if not AG_excel:
         tk.messagebox.showwarning("Advertencia", "No se seleccionó ningún archivo Excel.")
