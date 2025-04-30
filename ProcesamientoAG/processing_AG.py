@@ -1,13 +1,15 @@
 import time
 import os
 import re
+import shutil
 
 import pandas as pd
 from pdfquery import PDFQuery
+from rapidfuzz import process, fuzz
+from openpyxl import load_workbook
 
-from folders import (
-    integrate_files
-)
+from folders import acomodar_columnas
+from utils import listar_archivos_pdf
 from ProcesamientoAG.scrap_pdf_AG import (
     get_datos_from_pdf, 
     check_format, 
@@ -15,11 +17,6 @@ from ProcesamientoAG.scrap_pdf_AG import (
     get_DESTINATARIO,
     get_NACIONALIDAD_TRANSPORTE
 )
-
-from utils import listar_archivos_pdf
-from openpyxl import load_workbook
-
-
     
 def trasnform_df_AG(df)->pd.DataFrame:
     """ Transformar el df para que tenga el formato correcto
@@ -290,6 +287,83 @@ def transform_campo9(df: pd.DataFrame) -> pd.DataFrame:
 
     df['TRANSPORTE CAMPO 9'] = df['TRANSPORTE CAMPO 9'].str.replace(patron, '', regex=True).str.strip()
     return df
+
+def estandarizar_empresas(columna_transporte):
+    """
+    Función que estandariza los nombres de empresas en la columna 'TRANSPORTE CAMPO 1'.
+
+    Args:
+        columna_transporte (pd.Series): Columna con los nombres originales de las empresas.
+
+    Returns:
+        pd.DataFrame: DataFrame con las columnas 'original' y 'empresa_estandarizada'.
+    """
+    nombres_base = []
+    mapeo_estandar = {}
+    umbral = 85  # Nivel de similitud
+
+    for nombre in columna_transporte.unique():
+        match = process.extractOne(nombre, nombres_base, scorer=fuzz.token_sort_ratio)
+        
+        if match and match[1] >= umbral:
+            mapeo_estandar[nombre] = match[0]
+        else:
+            mapeo_estandar[nombre] = nombre
+            nombres_base.append(nombre)
+
+    # Crear el DataFrame con los resultados
+    df_resultado = pd.DataFrame({
+        'original': columna_transporte,
+        'empresa_estandarizada': columna_transporte.map(mapeo_estandar)
+    })
+
+    return df_resultado
+
+def integrate_files(destino: str, df, carpeta_pdfs) -> None:
+    """
+    Crea carpetas por empresa (nombre estandarizado), copia los PDFs asociados
+    y guarda el Excel filtrado de cada una. No modifica el DataFrame original.
+    """
+    
+    df_estandarizado = estandarizar_empresas(df["TRANSPORTE CAMPO 1"])
+    mapeo_estandar = dict(zip(df_estandarizado["original"], df_estandarizado["empresa_estandarizada"]))
+
+    
+    os.makedirs(destino, exist_ok=True)
+    general_excel_path = os.path.join(destino, "AG.xlsx")
+    df.to_excel(general_excel_path, index=False)
+    acomodar_columnas(general_excel_path)
+
+    files_with_path = [
+        os.path.join(carpeta_pdfs, file)
+        for file in os.listdir(carpeta_pdfs)
+        if file.endswith('.pdf')
+    ]
+
+    empresas_estandarizadas = set(mapeo_estandar.values())
+
+    for empresa_std in empresas_estandarizadas:
+        
+        nombre_carpeta = re.sub(r'[/:*?"<>|]', '', empresa_std).strip()
+        empresa_folder = os.path.join(destino, nombre_carpeta)
+        os.makedirs(empresa_folder, exist_ok=True)
+
+        indices = [i for i, nombre in enumerate(df["TRANSPORTE CAMPO 1"]) if mapeo_estandar[nombre] == empresa_std]
+        df_empresa = df.iloc[indices]
+        lista_mics_de_empresa = df_empresa['MIC - DTA'].tolist()
+
+        rutas_filtradas = [
+            ruta for ruta in files_with_path
+            if any(mic in ruta for mic in lista_mics_de_empresa)
+        ]
+
+        for ruta in rutas_filtradas:
+            shutil.copy(ruta, os.path.join(empresa_folder, os.path.basename(ruta)))
+
+        # Guardar Excel de empresa
+        empresa_excel_path = os.path.join(empresa_folder, f"AG-{nombre_carpeta}.xlsx")
+        df_empresa.to_excel(empresa_excel_path, index=False)
+        acomodar_columnas(empresa_excel_path)
 
 if __name__ == "__main__":
     archivos = listar_archivos_pdf('C:/Users/Usuario/Desktop/Rapha/pdfs-to-excel/testing-data')
