@@ -5,10 +5,13 @@ import threading
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, simpledialog
+from datetime import datetime
 
 from utils import check_single_instance
 from ProcesamientoAG.processing_AG import main_process_AG
+from ProcesamientoAG.detalle_operaciones import main_process_detalle_operacion
 from console_redirect import ConsoleRedirect
+
 
 carpeta = None 
 
@@ -21,6 +24,13 @@ def crear_ventana_principal():
     app = ctk.CTk()
     app.geometry("800x600")
     app.title("Manifiesto Internacional de Carga | PDF ➜ Excel")
+    app.update_idletasks()  # Asegurarse de que las dimensiones estén actualizadas
+    ancho_ventana = 800
+    alto_ventana = 600
+    x_centro = (app.winfo_screenwidth() // 2) - (ancho_ventana // 2)
+    y_centro = (app.winfo_screenheight() // 2) - (alto_ventana // 2)
+    app.geometry(f"{ancho_ventana}x{alto_ventana}+{x_centro}+{y_centro}")
+
     try:
         base_path = sys._MEIPASS
     except AttributeError:
@@ -97,14 +107,97 @@ def convertir_a_excel():
             boton.configure(state="normal", text="📤 Convertir a Excel", fg_color="#00aa88")
     threading.Thread(target=ejecutar).start()
 
-#def crear_detalle_operacion():
-#    
-#    AG_excel = filedialog.askopenfilename(filetypes=[("Seleccionar un AG", "*.xlsx")], title="Seleccionar archivo Excel (AG)")
-#    
-#    
-#    if not AG_excel:
-#        tk.messagebox.showwarning("Advertencia", "No se seleccionó ningún archivo Excel.")
-#        return
+def crear_detalle_operacion():
+    AG_excel = filedialog.askopenfilename(filetypes=[("Seleccionar un AG de empresa especifico", "*.xlsx")], title="Seleccionar archivo Excel (AG)")
+    
+    if not AG_excel:
+        tk.messagebox.showwarning("Advertencia", "No se seleccionó ningún archivo Excel.")
+        return
+    
+    anio, mes = None, None  # Variables para almacenar el año y el mes seleccionados
+
+    ventana = ctk.CTkToplevel()
+    ventana.title("Ingresar Año y Mes")
+    ventana.geometry("300x230")
+    ventana.grab_set()  # Bloquear interacción con la ventana principal
+
+    # Centrar la ventana en la pantalla
+    ventana.update_idletasks()
+    ancho_ventana = 300
+    alto_ventana = 230
+    x_centro = (ventana.winfo_screenwidth() // 2) - (ancho_ventana // 2)
+    y_centro = (ventana.winfo_screenheight() // 2) - (alto_ventana // 2)
+    ventana.geometry(f"{ancho_ventana}x{alto_ventana}+{x_centro}+{y_centro}")
+
+    def cerrar_ventana():
+        ventana.destroy()
+
+    etiqueta_anio = ctk.CTkLabel(ventana, text="Año:")
+    etiqueta_anio.pack(pady=(10, 2))
+    anio_actual = datetime.now().year
+    anio_input = ctk.CTkComboBox(ventana, values=[str(a) for a in range(anio_actual, anio_actual - 4, -1)])
+    anio_input.pack(pady=(0, 5))
+
+    etiqueta_mes = ctk.CTkLabel(ventana, text="Mes:")
+    etiqueta_mes.pack(pady=(5, 2))
+    mes_actual = datetime.now().month
+    meses = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ]
+    mes_input = ctk.CTkComboBox(ventana, values=meses)
+    mes_input.set(meses[mes_actual - 1])  # Seleccionar el mes actual por defecto
+    mes_input.pack(pady=(0, 5))
+
+    anio_textinput = ctk.CTkEntry(ventana, placeholder_text="Ingrese el año")
+    mes_textinput = ctk.CTkEntry(ventana, placeholder_text="Ingrese el mes")
+
+    def habilitar_textinputs():
+        anio_input.pack_forget()
+        mes_input.pack_forget()
+        etiqueta_mes.pack_forget()
+        etiqueta_anio.pack_forget()
+        
+        anio_textinput.pack(pady=(0, 5))
+        mes_textinput.pack(pady=(5, 5))
+
+    boton_escribir_a_mano = ctk.CTkButton(
+        ventana, text="🖊️ Escribir a mano", fg_color="#aa3333", hover_color="#cc4444", command=habilitar_textinputs
+    )
+    boton_escribir_a_mano.pack(pady=(10, 5))
+
+    def confirmar():
+        nonlocal anio, mes
+        if anio_textinput.winfo_ismapped() and mes_textinput.winfo_ismapped():
+            anio = anio_textinput.get()
+            mes = mes_textinput.get()
+        else:
+            anio = anio_input.get()
+            mes = mes_input.get()
+        if not anio or not mes:
+            tk.messagebox.showwarning("Advertencia", "Debe ingresar un año y un mes.")
+            return
+        cerrar_ventana()
+
+        # Preguntar dónde guardar el archivo Excel resultante
+        carpeta_destino = filedialog.askdirectory(title="Seleccionar carpeta para guardar el Excel resultante")
+        if not carpeta_destino:
+            tk.messagebox.showwarning("Advertencia", "Debe seleccionar una carpeta para guardar el archivo.")
+            return
+
+        main_process_detalle_operacion('assets/plantilla_detalle_operaciones.xlsx', carpeta_destino, AG_excel, anio, mes)
+        
+
+        tk.messagebox.showinfo("Éxito", f"Archivo Excel generado y guardado en: {carpeta_destino}")
+
+    boton_confirmar = ctk.CTkButton(
+        ventana, text="Confirmar", fg_color="#00aa88", hover_color="#00ccaa", command=confirmar
+    )
+    boton_confirmar.pack(pady=(10, 5))
+
+    ventana.protocol("WM_DELETE_WINDOW", cerrar_ventana)
+    ventana.mainloop()
+
     
     
     
@@ -256,18 +349,18 @@ def main():
     mostrar_tooltip(boton_limpiar, "Limpiar estado y archivos cargados.")
     boton_limpiar.pack()
 
-    #boton_detalles = ctk.CTkButton(
-    #    columna_derecha,
-    #    text="📋 Detalle de Operacion",
-    #    fg_color="#00aa88",
-    #    hover_color="#00ccaa",
-    #    width=240,
-    #    height=40,
-    #    command=crear_detalle_operacion,
-    #    font=ctk.CTkFont(size=13, weight="bold")
-    #)
-    #mostrar_tooltip(boton_detalles, "Crear un excel -> Detalles de Operaciones en base a un AG")
-    #boton_detalles.pack(side="bottom", pady=(10, 0))
+    boton_detalles = ctk.CTkButton(
+        columna_derecha,
+        text="📋 Detalle de Operacion",
+        fg_color="#00aa88",
+        hover_color="#00ccaa",
+        width=240,
+        height=40,
+        command=crear_detalle_operacion,
+        font=ctk.CTkFont(size=13, weight="bold")
+    )
+    mostrar_tooltip(boton_detalles, "Crear un excel -> Detalle de Operacion seleccionando excel especifico (AG-{empresa}, no el AG)")
+    boton_detalles.pack(side="bottom", pady=(10, 0))
     
     app.mainloop()
     
