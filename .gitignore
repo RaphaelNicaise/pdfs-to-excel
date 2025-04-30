@@ -5,6 +5,6 @@ dist/*.lnk
 *.spec
 __pycache__/
 *.xml
-*.xlsx
 testing-data/*.pdf
 testing-data/
+data/xmls
