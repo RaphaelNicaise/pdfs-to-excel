@@ -31,7 +31,7 @@ def main_process_detalle_operacion(ruta_excel_base, ruta_destino, excel_datos, a
 
     # Crear nombre del nuevo archivo
     nombre_empresa = os.path.basename(excel_datos).split('AG-')[1].split('.xlsx')[0]
-    nombre_archivo = "Detalle Proceso " + nombre_empresa + ".xlsx"
+    nombre_archivo = "Detalle Operaciones " + nombre_empresa + ".xlsx"
     ruta_final = os.path.join(ruta_destino, nombre_archivo)
 
     # Copiar plantilla a destino
