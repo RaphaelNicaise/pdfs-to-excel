@@ -38,7 +38,7 @@ def acomodar_columnas(path_excel):
 
     for column in sheet.columns:
         max_length = 0
-        column_letter = column[0].column_letter  # Obtener la letra de la columna
+        column_letter = column[0].column_letter  # obtener la letra de la columna
         for cell in column:
             try:
                 if cell.value:

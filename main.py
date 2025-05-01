@@ -179,7 +179,7 @@ def crear_detalle_operacion():
             return
         cerrar_ventana()
 
-        # Preguntar dónde guardar el archivo Excel resultante
+    
         carpeta_destino = filedialog.askdirectory(title="Seleccionar carpeta para guardar el Excel resultante")
         if not carpeta_destino:
             tk.messagebox.showwarning("Advertencia", "Debe seleccionar una carpeta para guardar el archivo.")

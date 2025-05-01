@@ -265,10 +265,10 @@ def agregar_factura_y_orden(df: pd.DataFrame) -> pd.DataFrame:
     # Extraer 'FACTURA Nº' y 'ORDEN' de 'descripcion_mercancia'
     factura_orden_df = extraer_factura_y_orden(df['descripcion_mercancia'])
         
-    # Eliminar la columna 'descripcion_mercancia'
+    
     df = df.drop(columns=['descripcion_mercancia'])
         
-        # Concatenar el DataFrame original con las nuevas columnas
+        
     df = pd.concat([df, factura_orden_df], axis=1)
         
     return df

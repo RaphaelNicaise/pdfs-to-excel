@@ -382,7 +382,7 @@ def get_TRANSPORTE_CAMPO_9(archivos: list[str]):
     for archivo in archivos:
     
         pdf = fitz.open(archivo).load_page(0)
-        # Load the page content as text
+        
         page_text = pdf.get_text("text")
 
         texto_antes = 'CAMINH?O ORIGINAL : Nome e endereco do proprietario\n9\n'

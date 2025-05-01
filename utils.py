@@ -54,13 +54,12 @@ def convertir_pdf_a_xml(pdf_path, output_path=None):
 
     # Cargar el archivo PDF
     pdf = PDFQuery(pdf_path)
-    pdf.load(0)  # Cargar la primera página del PDF
+    pdf.load(0)  
 
-    # Generar la ruta de salida si no se proporciona
     if output_path is None:
         output_path = pdf_path.replace('.pdf', '.xml')
 
-    # Guardar el contenido como XML
+    
     pdf.tree.write(output_path, pretty_print=True, encoding="utf-8")
     return output_path
     
