@@ -17,6 +17,8 @@ from ProcesamientoAG.scrap_pdf_AG import (
     get_DESTINATARIO,
     get_NACIONALIDAD_TRANSPORTE
 )
+
+from ProcesamientoAG.detalle_operaciones import main_process_detalle_operacion 
     
 def trasnform_df_AG(df)->pd.DataFrame:
     """ Transformar el df para que tenga el formato correcto
@@ -364,6 +366,21 @@ def integrate_files(destino: str, df, carpeta_pdfs) -> None:
         empresa_excel_path = os.path.join(empresa_folder, f"AG-{nombre_carpeta}.xlsx")
         df_empresa.to_excel(empresa_excel_path, index=False)
         acomodar_columnas(empresa_excel_path)
+
+        df_empresa['FECHA CARGA'] = pd.to_datetime(df_empresa['FECHA CARGA'], dayfirst=True, errors='coerce')
+        # Obtener el mes y el año únicos
+        mes = df_empresa['FECHA CARGA'].dt.month.unique()[0]
+        anio = df_empresa['FECHA CARGA'].dt.year.unique()[0]
+        
+        meses = [
+                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+                ]
+
+        mes = meses[mes - 1]  
+                
+        
+        main_process_detalle_operacion('assets/plantilla_detalle_operaciones.xlsx',empresa_folder, empresa_excel_path,anio,mes)
 
 if __name__ == "__main__":
     archivos = listar_archivos_pdf('C:/Users/Usuario/Desktop/Rapha/pdfs-to-excel/testing-data')
