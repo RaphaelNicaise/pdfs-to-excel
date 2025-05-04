@@ -5,8 +5,6 @@ import re
 import pandas as pd
 from openpyxl import load_workbook
 
-
-
 def create_folders_empresas(folder_path: str, empresas: list[str])-> None:
     """ Funcion que crea carpetas basado en lista de empresas
 
@@ -29,7 +27,6 @@ def create_structure_folders(folder_path: str, empresas: list[str])-> None:
         folder_path (str): _description_
         empresas (list[str]): _description_
     """
-    
 
     
 def acomodar_columnas(path_excel):

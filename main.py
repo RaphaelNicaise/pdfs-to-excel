@@ -7,12 +7,12 @@ import tkinter as tk
 from tkinter import filedialog, simpledialog
 from datetime import datetime
 
-from utils import check_single_instance
 from ProcesamientoAG.processing_AG import main_process_AG
 from ProcesamientoAG.detalle_operaciones import main_process_detalle_operacion
-from console_redirect import ConsoleRedirect
 
-
+from utils.utilities import check_single_instance
+from utils.console_redirect import ConsoleRedirect
+ 
 carpeta = None 
 
 def configurar_apariencia():
@@ -198,9 +198,6 @@ def crear_detalle_operacion():
     ventana.protocol("WM_DELETE_WINDOW", cerrar_ventana)
     ventana.mainloop()
 
-    
-    
-    
 
 def accion_seleccionar_carpeta(app, frame, etiqueta, boton_convertir, contador_pdfs):
     global carpeta  # Hacer la variable carpeta global

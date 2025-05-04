@@ -1,4 +1,7 @@
 class ConsoleRedirect:
+    """
+    Clase para redirigir la salida estandar a un widget de texto de Tkinter.
+    """
     def __init__(self, textbox):
         self.textbox = textbox
 
