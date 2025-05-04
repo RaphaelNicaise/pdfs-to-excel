@@ -176,27 +176,29 @@ def get_ADUANA_DESTINO(pdf: PDFQuery) -> str:
 def get_NACIONALIDAD_TRANSPORTE(archivos_validos: list[str]):
     data = []
     for archivo in archivos_validos:
-        pdf = fitz.open(archivo).load_page(0)
-        # Load the page content as text
-        page_text = pdf.get_text("text")
+        try:
+            pdf = fitz.open(archivo).load_page(0)
+            # Load the page content as text
+            page_text = pdf.get_text("text")
 
-        #print(page_text)
+            texto_antes = 'Nombre y domicilio del porteador'
+            texto_despues = '7 Aduana, ciudad y pais de partida'
+            pattern = re.escape(texto_antes) + r"(.*?)" + re.escape(texto_despues)
+            
+            matches = re.findall(pattern, page_text, re.DOTALL)
 
-        texto_antes = 'Nombre y domicilio del porteador'
-        texto_despues = '7 Aduana, ciudad y pais de partida'
-        pattern = re.escape(texto_antes) + r"(.*?)" + re.escape(texto_despues)
-        
-        matches = re.findall(pattern, page_text, re.DOTALL)
-
-        if matches:
-            pais = re.search(r'\b(?:ARGENTINA|BRASIL|PARAGUAY|URUGUAY|VENEZUELA|CHILE|BOLIVIA)\b', matches[0])
-            if pais:
-                data.append(pais.group())
+            if matches:
+                pais = re.search(r'\b(?:ARGENTINA|BRASIL|PARAGUAY|URUGUAY|VENEZUELA|CHILE|BOLIVIA)\b', matches[0])
+                if pais:
+                    data.append(pais.group())
+                else:
+                    data.append('NO ENCONTRADO')
             else:
                 data.append('NO ENCONTRADO')
-        else:
+        except Exception as e:
+            print(f"Error procesando el archivo {archivo}: {e}")
             data.append('NO ENCONTRADO')
-    return data    
+    return data
 
 # destinatario
 
@@ -211,19 +213,22 @@ def get_DESTINATARIO(archivos: list[str]): # LO HACE POR LISTA ARCHIVOS
     """
     data = []
     for archivo in archivos:
-        
         pdf = fitz.open(archivo).load_page(0)
-            # Load the page content as text
+        # Load the page content as text
         page_text = pdf.get_text("text")
-
-        #print(page_text)
 
         texto_antes = '/ Destinatario'
         texto_despues = '35 Consignatario /Consignatario'
         pattern = re.escape(texto_antes) + r"(.*)" + re.escape(texto_despues)
         matches = re.findall(pattern, page_text, re.DOTALL)
 
-        data.append(matches[0].split('\n')[1] if matches else None)
+        if matches:
+            try:
+                data.append(matches[0].split('\n')[1])
+            except IndexError:
+                data.append("NO ENCONTRADO")
+        else:
+            data.append("NO ENCONTRADO")
     return data
     
     
@@ -369,30 +374,33 @@ def get_descripcion_mercancia(pdf: PDFQuery) -> str:
 
 # ESTE VA APARTE, EN EL TRANSFORM_DF,se hace despues 
 def get_TRANSPORTE_CAMPO_9(archivos: list[str]):
-    """_summary_
+    """Obtiene el transporte campo 9 del archivo PDF.
 
     Args:
-        archivo (str): _description_
+        archivos (list[str]): Lista de rutas de archivos PDF.
 
     Returns:
-        _type_: _description_
+        list[str]: Lista con los datos obtenidos o "NO ENCONTRADO" si no se encuentra.
     """
-    
     data = []
     for archivo in archivos:
-    
-        pdf = fitz.open(archivo).load_page(0)
-        
-        page_text = pdf.get_text("text")
+        try:
+            pdf = fitz.open(archivo).load_page(0)
+            page_text = pdf.get_text("text")
 
-        texto_antes = 'CAMINH?O ORIGINAL : Nome e endereco do proprietario\n9\n'
-        texto_despues = 'CAMION SUBSTITUTO : Nombre y domicilio del propietario'
+            texto_antes = 'CAMINH?O ORIGINAL : Nome e endereco do proprietario\n9\n'
+            texto_despues = 'CAMION SUBSTITUTO : Nombre y domicilio del propietario'
 
-        pattern = re.escape(texto_antes) + r"(.*?)" + re.escape(texto_despues)
-        
-        matches = re.findall(pattern, page_text, re.DOTALL)
+            pattern = re.escape(texto_antes) + r"(.*?)" + re.escape(texto_despues)
+            matches = re.findall(pattern, page_text, re.DOTALL)
 
-        data.append(matches[0].split('- ')[0].strip()) if matches else None
+            if matches:
+                data.append(matches[0].split('- ')[0].strip())
+            else:
+                data.append("NO ENCONTRADO")
+        except Exception as e:
+            print(f"Error procesando el archivo {archivo}: {e}")
+            data.append("NO ENCONTRADO")
     
     return data
 

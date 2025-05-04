@@ -57,10 +57,10 @@ def trasnform_df_AG(df)->pd.DataFrame:
     
     df = agregar_factura_y_orden(df)
     
-    df = df.astype({
-        'VALOR FOB': 'float',
-        'KILOS BRUTOS': 'float'      
-    })
+    df['FECHA CARGA'] = pd.to_datetime(df['FECHA CARGA'], dayfirst=True, errors='coerce')
+    # Ordenar por la columna 'FECHA CARGA' de menor a mayor
+    df = df.sort_values(by='FECHA CARGA', ascending=True).reset_index(drop=True)
+    df['FECHA CARGA'] = df['FECHA CARGA'].dt.strftime('%d/%m/%Y')
     
     # ORDENAR COLUMNAS
     orden = [
@@ -104,6 +104,7 @@ def process_pdf(archivo:str)->dict:
         pdf.load(0)
         
         if not check_format(pdf):
+            print(f'Formato incorrecto en {os.path.basename(archivo)}')
             return None
             
             
@@ -135,12 +136,14 @@ def process_all_pdfs(archivos: list[str]) -> tuple[list, list]:
             if resultado is not None:
                 data.append(resultado)
                 archivos_validos.append(archivo)
+        print(f"Procesados {len(archivos_validos)} archivos válidos en {(time.time() - start):.2f} segundos")
+        return data, archivos_validos
     except Exception as e:
         print(f"Error procesando archivos: {e}")
         return [], []
     
-    print(f"Procesados {len(archivos_validos)} archivos válidos en {(time.time() - start):.2f} segundos")
-    return data, archivos_validos
+    
+    
 
 def main_process_AG(archivos: list, destino: str, path_carpeta_archivos) -> None:
     """
@@ -172,6 +175,7 @@ def main_process_AG(archivos: list, destino: str, path_carpeta_archivos) -> None
     df['NACIONALIDAD TRANSPORTE'] = get_NACIONALIDAD_TRANSPORTE(archivos_validos)
     
     df = trasnform_df_AG(df)
+    
     # REORDENAR COLUMNAS
     integrate_files(destino, df, path_carpeta_archivos)
     
@@ -265,7 +269,7 @@ def agregar_factura_y_orden(df: pd.DataFrame) -> pd.DataFrame:
             pd.DataFrame: DataFrame modificado con las columnas 'FACTURA Nº' y 'ORDEN'.
     """
     # Extraer 'FACTURA Nº' y 'ORDEN' de 'descripcion_mercancia'
-    factura_orden_df = extraer_factura_y_orden(df['descripcion_mercancia'])
+    factura_orden_df = extraer_factura_y_orden(df['descripcion_mercancia'].fillna(''))
         
     
     df = df.drop(columns=['descripcion_mercancia'])
