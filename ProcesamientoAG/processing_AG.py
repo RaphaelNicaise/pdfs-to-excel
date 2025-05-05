@@ -331,20 +331,31 @@ def integrate_files(destino: str, df: pd.DataFrame, carpeta_pdfs: str) -> None:
     Crea carpetas por empresa y maneja archivos fallidos sin modificar la lógica existente.
     """
     
-    fallidos_dir = os.path.join(destino, "Archivos Fallidos")
-    os.makedirs(fallidos_dir, exist_ok=True)
-
-    # encontrar los archivos que no tienen la fecha de carga valida
+    # un archivo es fallido si no tiene fecha de carga o transporte campo 1, aunque pase el check_format (solo chequea el header)
     df['FECHA_CARGA_VALIDA'] = pd.to_datetime(df['FECHA CARGA'], dayfirst=True, errors='coerce').notna()
-    df_fallidos = df[~df['FECHA_CARGA_VALIDA']].copy()
-    df_validos = df[df['FECHA_CARGA_VALIDA']].copy()
+    df['TRANSPORTE_VALIDO'] = df['TRANSPORTE CAMPO 1'].notna() & (df['TRANSPORTE CAMPO 1'] != '')
+    df['ES_FALLIDO'] = ~(df['FECHA_CARGA_VALIDA'] & df['TRANSPORTE_VALIDO'])
 
-    # mover pdfs fallidos a su carpeta
-    for archivo in df_fallidos['MIC - DTA']:
-        src = os.path.join(carpeta_pdfs, f"{archivo}.pdf")  # Asume que 'MIC - DTA' es el nombre del PDF
-        if os.path.exists(src):
-            shutil.copy(src, os.path.join(fallidos_dir, os.path.basename(src)))
-            print(f"[Archivo fallido movido] {archivo}")
+    #  separa dfs
+    df_fallidos = df[df['ES_FALLIDO']].copy()
+    df_validos = df[~df['ES_FALLIDO']].copy()
+
+    # eliminar columnas temporales ANTES de guardar
+    columnas_a_eliminar = ['FECHA_CARGA_VALIDA', 'TRANSPORTE_VALIDO', 'ES_FALLIDO']
+    df.drop(columns=columnas_a_eliminar, inplace=True, errors='ignore')
+    df_fallidos.drop(columns=columnas_a_eliminar, inplace=True, errors='ignore')
+    df_validos.drop(columns=columnas_a_eliminar, inplace=True, errors='ignore')
+
+    # mover PDFs fallidos
+    if not df_fallidos.empty:
+        fallidos_dir = os.path.join(destino, "Archivos Fallidos")
+        os.makedirs(fallidos_dir, exist_ok=True)
+
+        for archivo in df_fallidos['MIC - DTA']:
+            src = os.path.join(carpeta_pdfs, f"{archivo}.pdf")
+            if os.path.exists(src):
+                shutil.copy(src, os.path.join(fallidos_dir, os.path.basename(src)))
+
 
     
     df_estandarizado = estandarizar_empresas(df_validos["TRANSPORTE CAMPO 1"])  # Usar df_validos

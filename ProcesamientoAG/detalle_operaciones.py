@@ -80,8 +80,9 @@ def main_process_detalle_operacion(ruta_excel_base, ruta_destino, excel_datos, a
     wb.save(ruta_final)
     print(f"Archivo guardado en: {ruta_final}")
     
-    wb = Book(ruta_final)
-    ws =  wb.sheets[0]
+    app = xlwings.App(visible=False)
+    wb = app.books.open(ruta_final)
+    ws = wb.sheets[0]
     
     
     
