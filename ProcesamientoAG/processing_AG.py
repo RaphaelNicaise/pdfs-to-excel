@@ -64,11 +64,7 @@ def trasnform_df_AG(df)->pd.DataFrame:
     df['FECHA CARGA'] = df['FECHA CARGA'].dt.strftime('%d/%m/%Y')
     
     # si alguna fila tiene mas de 12 caracteres, busca un formato de patente con regex
-    df['TRACTOR'] = df['TRACTOR'].apply(
-    lambda x: re.search(r'(?=.*[A-Z])(?=.*\d)[A-Z\d]{6,10}', x).group(0) 
-    if len(x) > 12 and re.search(r'(?=.*[A-Z])(?=.*\d)[A-Z\d]{6,10}', x) 
-    else x
-)
+    df['TRACTOR'] = df['TRACTOR'].apply(extraer_patente)
     
     # ORDENAR COLUMNAS
     orden = [
@@ -419,6 +415,16 @@ def integrate_files(destino: str, df: pd.DataFrame, carpeta_pdfs: str) -> None:
             anio,
             mes
         )
+
+
+def extraer_patente(x):
+    if isinstance(x, str) and len(x) > 12:
+        # Buscar todas las palabras entre 6 y 10 caracteres con mayúsculas y números
+        matches = re.findall(r'\b(?=\w{6,10}\b)(?=\w*[A-Z])(?=\w*\d)\w+\b', x)
+        if matches:
+            return matches[0]  # Devuelve el primero que coincida
+    return x  # Si no hay coincidencias o es corto, devolver el original
+
 
 if __name__ == "__main__":
     archivos = listar_archivos_pdf('C:/Users/Usuario/Desktop/Rapha/pdfs-to-excel/testing-data')
