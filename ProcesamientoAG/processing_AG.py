@@ -63,6 +63,13 @@ def trasnform_df_AG(df)->pd.DataFrame:
     df = df.sort_values(by='FECHA CARGA', ascending=True).reset_index(drop=True)
     df['FECHA CARGA'] = df['FECHA CARGA'].dt.strftime('%d/%m/%Y')
     
+    # si alguna fila tiene mas de 12 caracteres, busca un formato de patente con regex
+    df['TRACTOR'] = df['TRACTOR'].apply(
+    lambda x: re.search(r'(?=.*[A-Z])(?=.*\d)[A-Z\d]{6,10}', x).group(0) 
+    if len(x) > 12 and re.search(r'(?=.*[A-Z])(?=.*\d)[A-Z\d]{6,10}', x) 
+    else x
+)
+    
     # ORDENAR COLUMNAS
     orden = [
         'FECHA CARGA',
@@ -87,7 +94,7 @@ def trasnform_df_AG(df)->pd.DataFrame:
     ]
     
     df = df[orden]
-    
+    print("Transformación completa.")
     return df
 
 
