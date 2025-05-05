@@ -326,19 +326,33 @@ def estandarizar_empresas(columna_transporte):
 
     return df_resultado
 
-def integrate_files(destino: str, df, carpeta_pdfs) -> None:
+def integrate_files(destino: str, df: pd.DataFrame, carpeta_pdfs: str) -> None:
     """
-    Crea carpetas por empresa (nombre estandarizado), copia los PDFs asociados
-    y guarda el Excel filtrado de cada una. No modifica el DataFrame original.
+    Crea carpetas por empresa y maneja archivos fallidos sin modificar la lógica existente.
     """
     
-    df_estandarizado = estandarizar_empresas(df["TRANSPORTE CAMPO 1"])
-    mapeo_estandar = dict(zip(df_estandarizado["original"], df_estandarizado["empresa_estandarizada"]))
+    fallidos_dir = os.path.join(destino, "Archivos Fallidos")
+    os.makedirs(fallidos_dir, exist_ok=True)
+
+    # encontrar los archivos que no tienen la fecha de carga valida
+    df['FECHA_CARGA_VALIDA'] = pd.to_datetime(df['FECHA CARGA'], dayfirst=True, errors='coerce').notna()
+    df_fallidos = df[~df['FECHA_CARGA_VALIDA']].copy()
+    df_validos = df[df['FECHA_CARGA_VALIDA']].copy()
+
+    # mover pdfs fallidos a su carpeta
+    for archivo in df_fallidos['MIC - DTA']:
+        src = os.path.join(carpeta_pdfs, f"{archivo}.pdf")  # Asume que 'MIC - DTA' es el nombre del PDF
+        if os.path.exists(src):
+            shutil.copy(src, os.path.join(fallidos_dir, os.path.basename(src)))
+            print(f"[Archivo fallido movido] {archivo}")
 
     
+    df_estandarizado = estandarizar_empresas(df_validos["TRANSPORTE CAMPO 1"])  # Usar df_validos
+    mapeo_estandar = dict(zip(df_estandarizado["original"], df_estandarizado["empresa_estandarizada"]))
+
     os.makedirs(destino, exist_ok=True)
     general_excel_path = os.path.join(destino, "AG.xlsx")
-    df.to_excel(general_excel_path, index=False)
+    df.to_excel(general_excel_path, index=False)  # Guardar todos los datos (incluyendo fallidos)
     acomodar_columnas(general_excel_path)
 
     files_with_path = [
@@ -350,13 +364,12 @@ def integrate_files(destino: str, df, carpeta_pdfs) -> None:
     empresas_estandarizadas = set(mapeo_estandar.values())
 
     for empresa_std in empresas_estandarizadas:
-        
         nombre_carpeta = re.sub(r'[/:*?"<>|]', '', empresa_std).strip()
         empresa_folder = os.path.join(destino, nombre_carpeta)
         os.makedirs(empresa_folder, exist_ok=True)
 
-        indices = [i for i, nombre in enumerate(df["TRANSPORTE CAMPO 1"]) if mapeo_estandar[nombre] == empresa_std]
-        df_empresa = df.iloc[indices]
+        indices = [i for i, nombre in enumerate(df_validos["TRANSPORTE CAMPO 1"]) if mapeo_estandar[nombre] == empresa_std]
+        df_empresa = df_validos.iloc[indices]  # Usar df_validos
         lista_mics_de_empresa = df_empresa['MIC - DTA'].tolist()
 
         rutas_filtradas = [
@@ -367,25 +380,27 @@ def integrate_files(destino: str, df, carpeta_pdfs) -> None:
         for ruta in rutas_filtradas:
             shutil.copy(ruta, os.path.join(empresa_folder, os.path.basename(ruta)))
 
-        # Guardar Excel de empresa
         empresa_excel_path = os.path.join(empresa_folder, f"AG-{nombre_carpeta}.xlsx")
         df_empresa.to_excel(empresa_excel_path, index=False)
         acomodar_columnas(empresa_excel_path)
 
         df_empresa['FECHA CARGA'] = pd.to_datetime(df_empresa['FECHA CARGA'], dayfirst=True, errors='coerce')
-        # Obtener el mes y el año únicos
         mes = df_empresa['FECHA CARGA'].dt.month.unique()[0]
         anio = df_empresa['FECHA CARGA'].dt.year.unique()[0]
         
         meses = [
-                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-                ]
-
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ]
         mes = meses[mes - 1]  
-                
         
-        main_process_detalle_operacion('assets/plantilla_detalle_operaciones.xlsx',empresa_folder, empresa_excel_path,anio,mes)
+        main_process_detalle_operacion(
+            'assets/plantilla_detalle_operaciones.xlsx',
+            empresa_folder, 
+            empresa_excel_path,
+            anio,
+            mes
+        )
 
 if __name__ == "__main__":
     archivos = listar_archivos_pdf('C:/Users/Usuario/Desktop/Rapha/pdfs-to-excel/testing-data')
