@@ -7,8 +7,8 @@ import tkinter as tk
 from tkinter import filedialog, simpledialog
 from datetime import datetime
 
-from ProcesamientoAG.processing_AG import main_process_AG
-from ProcesamientoAG.detalle_operaciones import main_process_detalle_operacion
+from src.processing_AG import main_process_AG
+from src.detalle_operaciones import main_process_detalle_operacion
 
 from utils.utilities import check_single_instance
 from utils.console_redirect import ConsoleRedirect

@@ -11,7 +11,7 @@ from openpyxl import load_workbook
 
 from utils.folders import acomodar_columnas
 from utils.utilities import listar_archivos_pdf
-from ProcesamientoAG.scrap_pdf_AG import (
+from src.scrap_pdf_AG import (
     get_datos_from_pdf, 
     check_format, 
     get_TRANSPORTE_CAMPO_9, 
