@@ -19,7 +19,7 @@ from src.scrap_pdf_AG import (
     get_NACIONALIDAD_TRANSPORTE
 )
 
-from ProcesamientoAG.detalle_operaciones import main_process_detalle_operacion 
+from src.detalle_operaciones import main_process_detalle_operacion 
     
 def trasnform_df_AG(df)->pd.DataFrame:
     """ Transformar el df para que tenga el formato correcto
