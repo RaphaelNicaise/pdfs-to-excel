@@ -8,3 +8,5 @@ __pycache__/
 testing-data/*.pdf
 testing-data/
 data/xmls
+
+data/AG**

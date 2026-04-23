@@ -64,4 +64,4 @@ def convertir_pdf_a_xml(pdf_path, output_path=None):
     return output_path
     
 if __name__ == "__main__":
-    print(listar_archivos_pdf('C:/Users/Usuario/Desktop/Rapha/pdfs-to-excel/testing-data'))
+    convertir_pdf_a_xml(r"C:\Rapha\repos\pdfs-to-excel-1\data\AG2026\pdfsnuevos\26AR077534N.pdf")

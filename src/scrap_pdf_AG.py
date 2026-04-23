@@ -75,23 +75,44 @@ def obtener_FECHA_CARGA(pdf: PDFQuery) -> str:
 # porteador
 
 def get_TRANSPORTE_CAMPO_1(pdf) -> str:
-    """Obtiene el nombre y domicilio del porteador del archivo PDF usando pdfquery.
-    """
+    """Obtiene el nombre de la empresa porteadora del archivo PDF usando pdfquery."""
+    ETIQUETAS_A_IGNORAR = [
+        "/ Nome e endereco do transportador",
+        "Nome e endereco do transportador",
+        "Nombre y domicilio del porteador",
+    ]
     try:
         base = pdf.pq('LTTextLineHorizontal:contains("Nombre y domicilio del porteador")')
         if not base:
             return ""
-        siguiente = base.next()
-        texto = siguiente.text().strip() if siguiente is not None else ""
-            
-        if texto == "/ Nome e endereco do transportador":
-            siguiente = siguiente.next()
-            texto = siguiente.text().strip() if siguiente is not None else ""
 
-        return texto
+        # eq(0) evita duplicados cuando se cargaron todas las páginas (MIC/DTA + CRT)
+        siguiente = base.eq(0).next()
+
+        for _ in range(6):
+            if siguiente is None:
+                break
+            texto = siguiente.text().strip()
+
+            if not texto or texto.isdigit():
+                siguiente = siguiente.next()
+                continue
+
+            if any(pat in texto for pat in ETIQUETAS_A_IGNORAR):
+                siguiente = siguiente.next()
+                continue
+
+            # Es el contenido real; tomar solo la primera línea (nombre de empresa)
+            primera_linea = siguiente.find('LTTextLineHorizontal').eq(0)
+            if len(primera_linea):
+                return primera_linea.text().strip()
+            return texto.splitlines()[0]
+
+        return ""
     except KeyError as e:
         print(f"Error: {e}")
         return ""
+    
 # ciudad_pais_partida
 
 # def get_ciudad_pais_partida(pdf: PDFQuery) -> str:
